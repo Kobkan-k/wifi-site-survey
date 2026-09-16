@@ -2023,6 +2023,45 @@ def _load_room_a_csv(room_key):
         return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
 
 
+
+def _embedded_room_b_data():
+    rows = [
+        ("P01",0,0,-73),("P02",1.7,0,-71),("P03",3.4,0,-61),("P04",5.1,0,-58),("P05",6.8,0,-68),
+        ("P06",0,1.8,-73),("P07",1.7,1.8,-64),("P08",3.4,1.8,-57),("P09",5.1,1.8,-57),("P10",6.8,1.8,-61),
+        ("P11",0,3.6,-67),("P12",1.7,3.6,-65),("P13",3.4,3.6,-64),("P14",5.1,3.6,-64),("P15",6.8,3.6,-66),
+        ("P16",0,5.4,-61),("P17",1.7,5.4,-56),("P18",3.4,5.4,-57),("P19",5.1,5.4,-59),("P20",6.8,5.4,-68),
+        ("P21",0,7.2,-59),("P22",1.7,7.2,-60),("P23",3.4,7.2,-57),("P24",5.1,7.2,-63),("P25",6.8,7.2,-61),
+        ("P26",0,9,-68),("P27",1.7,9,-67),("P28",3.4,9,-71),("P29",5.1,9,-74),("P30",6.8,9,-75)
+    ]
+    legacy = {"P14","P20","P22","P25"}
+    records = []
+    for p,x,y,rssi in rows:
+        lg = p in legacy
+        records.append({
+            "Point": p, "X": x, "Y": y,
+            "SSID": "KMITL-Legacy" if lg else "KMITL-WIFI",
+            "BSSID": "00:2E:C7:90:94:60" if lg else "00:2E:C7:90:94:61",
+            "RSSI": rssi, "Channel": 11, "Frequency": 2462,
+            "Band": "2.4GHz", "Security": "WPA2-ENT" if lg else "OPEN"
+        })
+    return pd.DataFrame(records)
+
+
+def _embedded_room_c_data():
+    return pd.DataFrame({
+        "Point": [f"P{i:02d}" for i in range(1, 10)],
+        "X": [0,1.35,2.70,0,1.35,2.70,0,1.35,2.70],
+        "Y": [0,0,0,4.50,4.50,4.50,9,9,9],
+        "SSID": ["KMITL-WIFI"] * 9,
+        "BSSID": ["ROOM-C-AP"] * 9,
+        "RSSI": [-82,-90,-84,-77,-67,-58,-77,-84,-75],
+        "Channel": [11] * 9,
+        "Frequency": [2462] * 9,
+        "Band": ["2.4GHz"] * 9,
+        "Security": ["OPEN"] * 9
+    })
+
+
 def load_room_a_combined_data():
     """
     Build one dataframe for the complete Room A (A1-A4).
@@ -2529,16 +2568,19 @@ else:
 
     else:
 
-        st.info(
-            f"""
-👆 ยังไม่พบไฟล์ `{default_filename}`
-
-สามารถอัปโหลดไฟล์ CSV/XLSX
-ด้านซ้ายเพื่อเริ่มใช้งาน
-"""
-        )
-
-        st.stop()
+        # Deploy mode: ไม่ต้องมี CSV ใน GitHub
+        # ถ้าผู้ใช้ไม่ได้อัปโหลดไฟล์ ระบบจะใช้ข้อมูลที่ฝังใน app.py อัตโนมัติ
+        if selected_room == "Room B":
+            df = _embedded_room_b_data()
+        elif selected_room == "Room C":
+            df = _embedded_room_c_data()
+        else:
+            st.error(
+                f"❌ ไม่พบข้อมูลสำหรับ {selected_room}"
+                if language == "ไทย"
+                else f"❌ No embedded data found for {selected_room}."
+            )
+            st.stop()
 
 
 # ============================================================
