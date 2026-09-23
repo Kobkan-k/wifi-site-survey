@@ -603,13 +603,13 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
             color="gray", opacity=0.85, hoverinfo="skip", showlegend=False
         ))
 
-    # Walls and doorway
-    wall(0, ROOM_Y_C, ROOM_X_C, ROOM_Y_C)
+    # Walls and doorway — updated: door is on the Y = ROOM_Y_C side
+    wall(0, 0, ROOM_X_C, 0)
     wall(0, 0, 0, ROOM_Y_C)
     wall(ROOM_X_C, 0, ROOM_X_C, ROOM_Y_C)
-    wall(0, 0, DOOR_X_START, 0)
-    wall(DOOR_X_END, 0, ROOM_X_C, 0)
-    wall(DOOR_X_START, 0, DOOR_X_END, 0,
+    wall(0, ROOM_Y_C, DOOR_X_START, ROOM_Y_C)
+    wall(DOOR_X_END, ROOM_Y_C, ROOM_X_C, ROOM_Y_C)
+    wall(DOOR_X_START, ROOM_Y_C, DOOR_X_END, ROOM_Y_C,
          height=WALL_H_C-DOOR_H, z0=DOOR_H)
 
     # Heatmap uses dashboard Room C data, not hard-coded RSSI.
@@ -697,17 +697,17 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
             for yy in [y-l/2+leg/2, y+l/2-leg/2]:
                 box(xx,yy,0,leg,leg,h-top_t,"#5C4033",name+" Leg")
 
-    def glass_door(name, hinge_x, is_left=True):
-        angle = np.radians(45 if is_left else -45)
-        px1, py1 = hinge_x, 0
+    def glass_door(name, hinge_x, angle_deg):
+        # Door is mounted on the top wall (Y = ROOM_Y_C) and swings inward.
+        angle = np.radians(angle_deg)
+        px1, py1 = hinge_x, ROOM_Y_C
         px2 = hinge_x + DOOR_EACH_W*np.cos(angle)
-        py2 = DOOR_EACH_W*np.sin(angle)
+        py2 = ROOM_Y_C + DOOR_EACH_W*np.sin(angle)
         t = 0.02
-        sign = -1 if is_left else 1
-        px3 = px2 + sign*t*np.sin(angle)
-        py3 = py2 - sign*t*np.cos(angle)
-        px4 = px1 + sign*t*np.sin(angle)
-        py4 = py1 - sign*t*np.cos(angle)
+        px3 = px2 - t*np.sin(angle)
+        py3 = py2 + t*np.cos(angle)
+        px4 = px1 - t*np.sin(angle)
+        py4 = py1 + t*np.cos(angle)
         xs=[px1,px2,px3,px4]*2
         ys=[py1,py2,py3,py4]*2
         zs=[0]*4+[DOOR_H]*4
@@ -721,14 +721,16 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
         ))
 
     if show_furniture:
-        glass_door("Left Glass Door", DOOR_X_START, True)
-        glass_door("Right Glass Door", DOOR_X_END, False)
+        # Double glass doors on the top wall, both opening inward.
+        glass_door("Left Glass Door", DOOR_X_START, -45)
+        glass_door("Right Glass Door", DOOR_X_END, 225)
 
+        # Four tables now run downward from the door at Y = 9.00 m.
         center_x = ROOM_X_C/2
-        table1_y = 0.60 + 1.83/2
-        table2_y = table1_y + 1.83
-        table3_y = table2_y + 1.83 + 0.50
-        table4_y = table3_y + 1.83
+        table1_y = ROOM_Y_C - 0.60 - 1.83/2
+        table2_y = table1_y - 1.83
+        table3_y = table2_y - 1.83 - 0.50
+        table4_y = table3_y - 1.83
         for n, yy in enumerate([table1_y,table2_y,table3_y,table4_y], 1):
             table(f"Table {n}", center_x, yy)
 
@@ -2023,45 +2025,6 @@ def _load_room_a_csv(room_key):
         return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
 
 
-
-def _embedded_room_b_data():
-    rows = [
-        ("P01",0,0,-73),("P02",1.7,0,-71),("P03",3.4,0,-61),("P04",5.1,0,-58),("P05",6.8,0,-68),
-        ("P06",0,1.8,-73),("P07",1.7,1.8,-64),("P08",3.4,1.8,-57),("P09",5.1,1.8,-57),("P10",6.8,1.8,-61),
-        ("P11",0,3.6,-67),("P12",1.7,3.6,-65),("P13",3.4,3.6,-64),("P14",5.1,3.6,-64),("P15",6.8,3.6,-66),
-        ("P16",0,5.4,-61),("P17",1.7,5.4,-56),("P18",3.4,5.4,-57),("P19",5.1,5.4,-59),("P20",6.8,5.4,-68),
-        ("P21",0,7.2,-59),("P22",1.7,7.2,-60),("P23",3.4,7.2,-57),("P24",5.1,7.2,-63),("P25",6.8,7.2,-61),
-        ("P26",0,9,-68),("P27",1.7,9,-67),("P28",3.4,9,-71),("P29",5.1,9,-74),("P30",6.8,9,-75)
-    ]
-    legacy = {"P14","P20","P22","P25"}
-    records = []
-    for p,x,y,rssi in rows:
-        lg = p in legacy
-        records.append({
-            "Point": p, "X": x, "Y": y,
-            "SSID": "KMITL-Legacy" if lg else "KMITL-WIFI",
-            "BSSID": "00:2E:C7:90:94:60" if lg else "00:2E:C7:90:94:61",
-            "RSSI": rssi, "Channel": 11, "Frequency": 2462,
-            "Band": "2.4GHz", "Security": "WPA2-ENT" if lg else "OPEN"
-        })
-    return pd.DataFrame(records)
-
-
-def _embedded_room_c_data():
-    return pd.DataFrame({
-        "Point": [f"P{i:02d}" for i in range(1, 10)],
-        "X": [0,1.35,2.70,0,1.35,2.70,0,1.35,2.70],
-        "Y": [0,0,0,4.50,4.50,4.50,9,9,9],
-        "SSID": ["KMITL-WIFI"] * 9,
-        "BSSID": ["ROOM-C-AP"] * 9,
-        "RSSI": [-82,-90,-84,-77,-67,-58,-77,-84,-75],
-        "Channel": [11] * 9,
-        "Frequency": [2462] * 9,
-        "Band": ["2.4GHz"] * 9,
-        "Security": ["OPEN"] * 9
-    })
-
-
 def load_room_a_combined_data():
     """
     Build one dataframe for the complete Room A (A1-A4).
@@ -2105,12 +2068,12 @@ def load_room_a_combined_data():
     return pd.concat(frames, ignore_index=True)
 
 
-def create_room_a_combined_heatmap(opacity=0.85, show_points=True, show_furniture=True):
+def create_room_a_combined_heatmap(opacity=0.85, show_ap=True, show_points=True, show_furniture=True):
     """Create the complete Room A 3D view with four sub-room heatmaps."""
     fig = go.Figure()
     custom_scale = [[0.0, "#ef4444"], [0.375, "#f97316"], [0.625, "#eab308"], [1.0, "#22c55e"]]
 
-    def add_wall(x1, y1, x2, y2, height=WALL_HEIGHT):
+    def add_wall(x1, y1, x2, y2, height=WALL_HEIGHT, z0=0):
         dx, dy = x2-x1, y2-y1
         length = float(np.hypot(dx, dy))
         if length == 0:
@@ -2119,7 +2082,7 @@ def create_room_a_combined_heatmap(opacity=0.85, show_points=True, show_furnitur
         ny =  dx / length * ROOM_A_WALL_THICKNESS / 2
         pts = [(x1+nx,y1+ny),(x2+nx,y2+ny),(x2-nx,y2-ny),(x1-nx,y1-ny)]
         xs=[q[0] for q in pts]*2; ys=[q[1] for q in pts]*2
-        zs=[0,0,0,0,height,height,height,height]
+        zs=[z0,z0,z0,z0,z0+height,z0+height,z0+height,z0+height]
         fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,
             i=[0,0,0,4,4,4,0,1,2,3,0,1],
             j=[1,2,3,5,6,7,1,2,3,0,4,5],
@@ -2176,12 +2139,73 @@ def create_room_a_combined_heatmap(opacity=0.85, show_points=True, show_furnitur
                 customdata=vals,hovertemplate=f"<b>{label}</b><br>RSSI: %{{customdata:.1f}} dBm<extra></extra>",
                 name=f"{label} Survey",showlegend=False))
 
-    # Outer and internal walls from the supplied Room A layout.
-    add_wall(0,0,ROOM_A_X,0); add_wall(0,0,0,ROOM_A_Y); add_wall(ROOM_A_X,0,ROOM_A_X,ROOM_A_Y); add_wall(0,ROOM_A_Y,ROOM_A_X,ROOM_A_Y)
-    add_wall(0,4.20,3.535,4.20); add_wall(3.535,2.83,7.105,2.83)
-    add_wall(3.535,4.20,3.535,8.33); add_wall(3.535,0,3.535,2.83)
+    # --------------------------------------------------------
+    # Room A walls and door openings — updated from supplied plan
+    # --------------------------------------------------------
+    DOOR_H = 2.06
+    DOOR_W = 0.97
+
+    # Outer walls. A3 has a 1.94 m double swing door at X=1.03..2.97.
+    add_wall(0, 0, 1.03, 0)
+    add_wall(2.97, 0, ROOM_A_X, 0)
+    add_wall(1.03, 0, 2.97, 0, height=WALL_HEIGHT-DOOR_H, z0=DOOR_H)
+    add_wall(0, 0, 0, ROOM_A_Y)
+    add_wall(ROOM_A_X, 0, ROOM_A_X, ROOM_A_Y)
+    add_wall(0, ROOM_A_Y, ROOM_A_X, ROOM_A_Y)
+
+    # A1/A3 divider with sliding door at X=2.45..3.42.
+    add_wall(0, 4.20, 2.45, 4.20)
+    add_wall(3.42, 4.20, 3.535, 4.20)
+    add_wall(2.45, 4.20, 3.42, 4.20, height=WALL_HEIGHT-DOOR_H, z0=DOOR_H)
+
+    # A2/A4 divider.
+    add_wall(3.535, 2.83, 7.105, 2.83)
+
+    # A1/A2 divider.
+    add_wall(3.535, 4.20, 3.535, 8.33)
+
+    # A3/A4 divider with A4 sliding door at Y=1.86..2.83.
+    add_wall(3.535, 0, 3.535, 1.86)
+    add_wall(3.535, 1.86, 3.535, 2.83, height=WALL_HEIGHT-DOOR_H, z0=DOOR_H)
+
+    # A2/A3 divider with A2 sliding door at Y=3.03..4.00.
+    add_wall(3.535, 2.83, 3.535, 3.03)
+    add_wall(3.535, 4.00, 3.535, 4.20)
+    add_wall(3.535, 3.03, 3.535, 4.00, height=WALL_HEIGHT-DOOR_H, z0=DOOR_H)
+
+    def add_sliding_door(name, x, y, length, orientation="horizontal"):
+        t = 0.04
+        if orientation == "horizontal":
+            add_box(x + length/2, y, 0, length, t, DOOR_H, "lightblue", name)
+        else:
+            add_box(x, y + length/2, 0, t, length, DOOR_H, "lightblue", name)
+
+    def add_swing_door(name, hinge_x, hinge_y, width, angle_deg):
+        a = np.radians(angle_deg)
+        x2 = hinge_x + width*np.cos(a)
+        y2 = hinge_y + width*np.sin(a)
+        t = 0.02
+        nx, ny = -np.sin(a)*t, np.cos(a)*t
+        xs = [hinge_x, x2, x2+nx, hinge_x+nx]*2
+        ys = [hinge_y, y2, y2+ny, hinge_y+ny]*2
+        zs = [0]*4 + [DOOR_H]*4
+        fig.add_trace(go.Mesh3d(
+            x=xs, y=ys, z=zs,
+            i=[0,0,4,4,0,0,2,2,0,0,1,1],
+            j=[1,2,5,6,1,5,3,7,3,7,2,6],
+            k=[2,3,6,7,5,4,7,6,7,4,6,5],
+            color="lightblue", opacity=0.40, name=name,
+            hoverinfo="name", showlegend=False
+        ))
 
     if show_furniture:
+        # Doors
+        add_sliding_door("A1 Sliding Door", 2.45, 4.20-(ROOM_A_WALL_THICKNESS/2+0.01), 0.97, "horizontal")
+        add_sliding_door("A2 Sliding Door", 3.535+(ROOM_A_WALL_THICKNESS/2+0.01), 3.03, 0.97, "vertical")
+        add_sliding_door("A4 Sliding Door", 3.535-(ROOM_A_WALL_THICKNESS/2+0.01), 1.86, 0.97, "vertical")
+        add_swing_door("A3 Left Swing Door", 1.03, 0.0, 0.97, 45)
+        add_swing_door("A3 Right Swing Door", 2.97, 0.0, 0.97, 135)
+
         tw,tl=.73,1.83
         # A1: two central tables
         cx=(0+3.535)/2; cy=(4.20+8.33)/2
@@ -2197,6 +2221,23 @@ def create_room_a_combined_heatmap(opacity=0.85, show_points=True, show_furnitur
         # A4: two central tables
         cx=(3.535+7.105)/2; cy=2.83/2
         add_table("A4 Table 1",cx,cy+tw/2,tl,tw); add_table("A4 Table 2",cx,cy-tw/2,tl,tw)
+
+    if show_ap:
+        # AP marker at the center of the complete Room A plan.
+        ap_x, ap_y = ROOM_A_X/2, ROOM_A_Y/2
+        fig.add_trace(go.Scatter3d(
+            x=[ap_x], y=[ap_y], z=[AP_HEIGHT],
+            mode="markers+text",
+            marker=dict(size=14, color="#FF0D0D", symbol="diamond",
+                        line=dict(color="white", width=2)),
+            text=["📡 AP"], textposition="top center",
+            name="Access Point"
+        ))
+        fig.add_trace(go.Scatter3d(
+            x=[ap_x, ap_x], y=[ap_y, ap_y], z=[0, AP_HEIGHT],
+            mode="lines", line=dict(color="#FF3030", width=4, dash="dash"),
+            hoverinfo="skip", showlegend=False
+        ))
 
     fig.update_layout(
         title=dict(text="Room A — 3D Wi-Fi RSSI Heatmap (A1–A4)",x=.5),
@@ -2568,19 +2609,16 @@ else:
 
     else:
 
-        # Deploy mode: ไม่ต้องมี CSV ใน GitHub
-        # ถ้าผู้ใช้ไม่ได้อัปโหลดไฟล์ ระบบจะใช้ข้อมูลที่ฝังใน app.py อัตโนมัติ
-        if selected_room == "Room B":
-            df = _embedded_room_b_data()
-        elif selected_room == "Room C":
-            df = _embedded_room_c_data()
-        else:
-            st.error(
-                f"❌ ไม่พบข้อมูลสำหรับ {selected_room}"
-                if language == "ไทย"
-                else f"❌ No embedded data found for {selected_room}."
-            )
-            st.stop()
+        st.info(
+            f"""
+👆 ยังไม่พบไฟล์ `{default_filename}`
+
+สามารถอัปโหลดไฟล์ CSV/XLSX
+ด้านซ้ายเพื่อเริ่มใช้งาน
+"""
+        )
+
+        st.stop()
 
 
 # ============================================================
@@ -3038,6 +3076,7 @@ if not wifi.empty:
 
             room_a_fig = create_room_a_combined_heatmap(
                 opacity=opacity,
+                show_ap=show_ap,
                 show_points=show_points,
                 show_furniture=show_furniture
             )
