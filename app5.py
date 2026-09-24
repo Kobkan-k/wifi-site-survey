@@ -2811,8 +2811,8 @@ page_subtitle = (
 
 st.markdown(
     f"""
-    <div class="dashboard-title">ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา</div>
-    <div class="dashboard-subtitle">Portable Wireless Site Survey and Network Analysis System</div>
+    <div class="dashboard-title">Portable Wireless Site Survey and Network Analysis System</div>
+    <div class="dashboard-subtitle">ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา</div>
     <div class="room-badge">📍 {display_room}</div>
     """,
     unsafe_allow_html=True
