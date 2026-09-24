@@ -69,7 +69,7 @@ def force_white_3d(fig):
 # ============================================================
 
 st.set_page_config(
-    page_title="Wi-Fi Site Survey",
+    page_title="Portable Wireless Site Survey and Network Analysis System",
     page_icon="📡",
     layout="wide"
 )
@@ -2811,8 +2811,8 @@ page_subtitle = (
 
 st.markdown(
     f"""
-    <div class="dashboard-title">📡 Wi-Fi Smart Site Survey</div>
-    <div class="dashboard-subtitle">{page_subtitle}</div>
+    <div class="dashboard-title">ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา</div>
+    <div class="dashboard-subtitle">Portable Wireless Site Survey and Network Analysis System</div>
     <div class="room-badge">📍 {display_room}</div>
     """,
     unsafe_allow_html=True
@@ -3552,7 +3552,7 @@ st.markdown(
 )
 
 st.caption(
-    f"Wi-Fi Site Survey Dashboard | "
+    f"ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา | "
     f"{selected_room} | "
     f"{ROOM_X:.2f} × {ROOM_Y:.2f} m"
 )
