@@ -69,7 +69,7 @@ def force_white_3d(fig):
 # ============================================================
 
 st.set_page_config(
-    page_title="Portable Wireless Site Survey and Network Analysis System",
+    page_title="ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา",
     page_icon="📡",
     layout="wide"
 )
@@ -3552,7 +3552,7 @@ st.markdown(
 )
 
 st.caption(
-    f"ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา | "
+    f"Portable Wireless Site Survey and Network Analysis System | "
     f"{selected_room} | "
     f"{ROOM_X:.2f} × {ROOM_Y:.2f} m"
 )
