@@ -659,13 +659,13 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
     # ============================================================
 
     FONT_FAMILY = "Arial"
-    FONT_SIZE = 14
+    FONT_SIZE = 10
     FONT_COLOR = "#4B5563"  # Dark gray, normal weight
 
-    SHOW_POINT_ID = False
+    SHOW_POINT_ID = True
 
     MARKER_HEIGHT = 0.15
-    TEXT_HEIGHT = 0.23
+    TEXT_HEIGHT = 1.05
 
     # ============================================================
     # 3. CREATE FIGURE
@@ -729,11 +729,11 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 
         fig.add_trace(go.Mesh3d(
             x=x, y=y, z=z,
-            i=[0, 0, 0, 4, 4, 4],
-            j=[1, 2, 3, 5, 6, 7],
-            k=[2, 3, 4, 6, 7, 5],
-            color="#6B7280",
-            opacity=0.85,
+            i=[0,0,4,4,0,0,2,2,0,0,1,1],
+            j=[1,2,5,6,1,5,3,7,3,7,2,6],
+            k=[2,3,6,7,5,4,7,6,7,4,6,5],
+            color="#93C5FD",
+            opacity=0.06,
             hoverinfo="skip",
             showlegend=False
         ))
@@ -772,7 +772,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 
         # Create interpolation grid
         grid_x = np.linspace(x_min, x_max, 80)
-        grid_y = np.linspace(y_min, y_max, 80)
+        grid_y = np.linspace(y_min, y_max, 120)
         GX, GY = np.meshgrid(grid_x, grid_y)
 
         # Cubic interpolation
@@ -840,8 +840,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
             hovertemplate=(
                 "X: %{x:.2f} m"
                 "<br>Y: %{y:.2f} m"
-                "<br>RSSI: %{surfacecolor:.1f} dBm"
-                "<extra></extra>"
+                                "<extra></extra>"
             )
         ))
 
@@ -849,7 +848,8 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
         # 5.2 SURVEY POINT MARKERS
         # --------------------------------------------------------
 
-        fig.add_trace(go.Scatter3d(
+        if show_points:
+            fig.add_trace(go.Scatter3d(
             x=x_values,
             y=y_values,
             z=np.full(len(x_values), MARKER_HEIGHT),
@@ -862,13 +862,12 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
                 line=dict(width=1, color="#FFFFFF")
             ),
 
-            customdata=rssi_values,
+            customdata=[f"P{i:02d}" for i in range(1, len(x_values) + 1)],
 
             hovertemplate=(
                 "X: %{x:.2f} m"
                 "<br>Y: %{y:.2f} m"
-                "<br>RSSI: %{customdata:.0f} dBm"
-                "<extra></extra>"
+                                "<extra></extra>"
             ),
 
             name="Survey Points",
@@ -879,34 +878,26 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
         # 5.3 RSSI LABELS (GRAY, NORMAL FONT)
         # --------------------------------------------------------
 
-        if SHOW_POINT_ID:
-            labels = [
-                f"P{i:02d}: {rssi:.0f}"
-                for i, rssi in enumerate(rssi_values, start=1)
-            ]
-        else:
-            labels = [f"{rssi:.0f}" for rssi in rssi_values]
+        labels = [f"P{i:02d}" for i in range(1, len(x_values) + 1)]
+        label_x, label_y = [], []
+        for idx, (xx, yy) in enumerate(zip(x_values, y_values)):
+            # Preserve 3-column placement for the embedded nine survey points.
+            # Uploaded measurements use the same inward-edge positioning.
+            col = int(np.argmin(np.abs(np.array([0, ROOM_X / 2, ROOM_X]) - xx)))
+            row = int(np.argmin(np.abs(np.array([0, ROOM_Y / 2, ROOM_Y]) - yy)))
+            dx = [0.27, 0.0, -0.27][col]
+            dy = [0.38, 0.0, -0.38][row]
+            label_x.append(float(np.clip(xx + dx, 0.25, ROOM_X - 0.25)))
+            label_y.append(float(np.clip(yy + dy, 0.30, ROOM_Y - 0.30)))
 
-        fig.add_trace(go.Scatter3d(
-            x=x_values,
-            y=y_values,
+        if show_points:
+            fig.add_trace(go.Scatter3d(
+            x=label_x, y=label_y,
             z=np.full(len(x_values), TEXT_HEIGHT),
-
-            mode="text",
-            text=labels,
-            textposition="top center",
-
-            textfont=dict(
-                family=FONT_FAMILY,
-                size=FONT_SIZE,
-                color=FONT_COLOR
-            ),
-
-            hoverinfo="skip",
-            name="RSSI Labels",
-            showlegend=False
+            mode="text", text=labels, textposition="middle center",
+            textfont=dict(family=FONT_FAMILY, size=FONT_SIZE, color=FONT_COLOR),
+            hoverinfo="skip", name="Point Labels", showlegend=False
         ))
-
 
     # ============================================================
     # 6. REAL MEASUREMENT DATA
