@@ -237,50 +237,161 @@ def load_data(uploaded_file):
         return None
 
     try:
+
+        # ----------------------------------------------------
+        # CSV
+        # ----------------------------------------------------
+
         if uploaded_file.name.lower().endswith(".csv"):
-            df = pd.read_csv(uploaded_file, skipinitialspace=True)
+
+            df = pd.read_csv(
+                uploaded_file,
+                skipinitialspace=True
+            )
+
+        # ----------------------------------------------------
+        # Excel
+        # ----------------------------------------------------
+
         elif uploaded_file.name.lower().endswith(".xlsx"):
-            df = pd.read_excel(uploaded_file)
+
+            df = pd.read_excel(
+                uploaded_file
+            )
+
         else:
+
             return None
 
-        df.columns = df.columns.astype(str).str.strip()
+        # ----------------------------------------------------
+        # Clean Column Names
+        # ----------------------------------------------------
+
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()
+        )
+
+        # ----------------------------------------------------
+        # Rename Columns
+        # ----------------------------------------------------
 
         rename_mapping = {
-            "Point ID": "Point", "Point": "Point",
-            "X (m)": "X", "X": "X",
-            "Y (m)": "Y", "Y": "Y",
-            "RSSI (dBm)": "RSSI", "RSSI_dBm": "RSSI", "RSSI": "RSSI",
-            "Frequency (MHz)": "Frequency", "Frequency": "Frequency",
-            "Channel": "Channel", "channel": "Channel",
-            "SSID": "SSID", "BSSID": "BSSID", "Band": "Band"
+
+            "Point ID": "Point",
+            "Point": "Point",
+
+            "X (m)": "X",
+            "X": "X",
+
+            "Y (m)": "Y",
+            "Y": "Y",
+
+            "RSSI (dBm)": "RSSI",
+            "RSSI_dBm": "RSSI",
+            "RSSI": "RSSI",
+
+            "Frequency (MHz)": "Frequency",
+            "Frequency": "Frequency",
+
+            "Channel": "Channel",
+            "channel": "Channel",
+
+            "SSID": "SSID",
+            "BSSID": "BSSID",
+
+            "Band": "Band"
         }
 
-        df.rename(columns=rename_mapping, inplace=True)
+        df.rename(
+            columns=rename_mapping,
+            inplace=True
+        )
 
-        required_columns = ["Point", "X", "Y", "SSID", "BSSID", "RSSI"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        # ----------------------------------------------------
+        # Check Required Columns
+        # ----------------------------------------------------
+
+        required_columns = [
+            "Point",
+            "X",
+            "Y",
+            "SSID",
+            "BSSID",
+            "RSSI"
+        ]
+
+        missing_columns = [
+            col
+            for col in required_columns
+            if col not in df.columns
+        ]
 
         if missing_columns:
-            st.error("❌ ไม่พบ Column ที่จำเป็น: " + ", ".join(missing_columns))
-            st.info("Column ที่พบในไฟล์: " + ", ".join(df.columns.tolist()))
+
+            st.error(
+                "❌ ไม่พบ Column ที่จำเป็น: "
+                + ", ".join(missing_columns)
+            )
+
+            st.info(
+                "Column ที่พบในไฟล์: "
+                + ", ".join(df.columns.tolist())
+            )
+
             return pd.DataFrame()
 
-        df["X"] = pd.to_numeric(df["X"], errors="coerce")
-        df["Y"] = pd.to_numeric(df["Y"], errors="coerce")
-        df["RSSI"] = pd.to_numeric(df["RSSI"], errors="coerce")
+        # ----------------------------------------------------
+        # Convert Numeric
+        # ----------------------------------------------------
+
+        df["X"] = pd.to_numeric(
+            df["X"],
+            errors="coerce"
+        )
+
+        df["Y"] = pd.to_numeric(
+            df["Y"],
+            errors="coerce"
+        )
+
+        df["RSSI"] = pd.to_numeric(
+            df["RSSI"],
+            errors="coerce"
+        )
 
         if "Channel" in df.columns:
-            df["Channel"] = pd.to_numeric(df["Channel"], errors="coerce")
 
-        df = df.dropna(subset=["X", "Y", "RSSI"]).copy()
+            df["Channel"] = pd.to_numeric(
+                df["Channel"],
+                errors="coerce"
+            )
+
+        # ----------------------------------------------------
+        # Remove Invalid Rows
+        # ----------------------------------------------------
+
+        df = df.dropna(
+            subset=[
+                "X",
+                "Y",
+                "RSSI"
+            ]
+        ).copy()
+
         return df
 
     except Exception as e:
-        st.error(f"❌ ไม่สามารถอ่านไฟล์ได้: {e}")
+
+        st.error(
+            f"❌ ไม่สามารถอ่านไฟล์ได้: {e}"
+        )
+
         return pd.DataFrame()
 
 
+# Embedded Room B measurements from the updated 30-point survey.
 ROOM_B_EMBEDDED_CSV = 'Point,X,Y,SSID,BSSID,RSSI,Channel,Frequency,Band,Security\nP01,0,0,KMITL-WIFI,00:2E:C7:90:94:61,-73,11,2462,2.4GHz,OPEN\nP02,1.7,0,KMITL-WIFI,00:2E:C7:90:94:61,-71,11,2462,2.4GHz,OPEN\nP03,3.4,0,KMITL-WIFI,00:2E:C7:90:94:61,-61,11,2462,2.4GHz,OPEN\nP04,5.1,0,KMITL-WIFI,00:2E:C7:90:94:61,-58,11,2462,2.4GHz,OPEN\nP05,6.8,0,KMITL-WIFI,00:2E:C7:90:94:61,-68,11,2462,2.4GHz,OPEN\nP06,0,1.8,KMITL-WIFI,00:2E:C7:90:94:61,-73,11,2462,2.4GHz,OPEN\nP07,1.7,1.8,KMITL-WIFI,00:2E:C7:90:94:61,-64,11,2462,2.4GHz,OPEN\nP08,3.4,1.8,KMITL-WIFI,00:2E:C7:90:94:61,-57,11,2462,2.4GHz,OPEN\nP09,5.1,1.8,KMITL-WIFI,00:2E:C7:90:94:61,-57,11,2462,2.4GHz,OPEN\nP10,6.8,1.8,KMITL-WIFI,00:2E:C7:90:94:61,-61,11,2462,2.4GHz,OPEN\nP11,0,3.6,KMITL-WIFI,00:2E:C7:90:94:61,-67,11,2462,2.4GHz,OPEN\nP12,1.7,3.6,KMITL-WIFI,00:2E:C7:90:94:61,-65,11,2462,2.4GHz,OPEN\nP13,3.4,3.6,KMITL-WIFI,00:2E:C7:90:94:61,-64,11,2462,2.4GHz,OPEN\nP14,5.1,3.6,KMITL-Legacy,00:2E:C7:90:94:60,-64,11,2462,2.4GHz,WPA2-ENT\nP15,6.8,3.6,KMITL-WIFI,00:2E:C7:90:94:61,-66,11,2462,2.4GHz,OPEN\nP16,0,5.4,KMITL-WIFI,00:2E:C7:90:94:61,-61,11,2462,2.4GHz,OPEN\nP17,1.7,5.4,KMITL-WIFI,00:2E:C7:90:94:61,-56,11,2462,2.4GHz,OPEN\nP18,3.4,5.4,KMITL-WIFI,00:2E:C7:90:94:61,-57,11,2462,2.4GHz,OPEN\nP19,5.1,5.4,KMITL-WIFI,00:2E:C7:90:94:61,-59,11,2462,2.4GHz,OPEN\nP20,6.8,5.4,KMITL-Legacy,00:2E:C7:90:94:60,-68,11,2462,2.4GHz,WPA2-ENT\nP21,0,7.2,KMITL-WIFI,00:2E:C7:90:94:61,-59,11,2462,2.4GHz,OPEN\nP22,1.7,7.2,KMITL-Legacy,00:2E:C7:90:94:60,-60,11,2462,2.4GHz,WPA2-ENT\nP23,3.4,7.2,KMITL-WIFI,00:2E:C7:90:94:61,-57,11,2462,2.4GHz,OPEN\nP24,5.1,7.2,KMITL-WIFI,00:2E:C7:90:94:61,-63,11,2462,2.4GHz,OPEN\nP25,6.8,7.2,KMITL-Legacy,00:2E:C7:90:94:60,-61,11,2462,2.4GHz,WPA2-ENT\nP26,0,9,KMITL-WIFI,00:2E:C7:90:94:61,-68,11,2462,2.4GHz,OPEN\nP27,1.7,9,KMITL-WIFI,00:2E:C7:90:94:61,-67,11,2462,2.4GHz,OPEN\nP28,3.4,9,KMITL-WIFI,00:2E:C7:90:94:61,-71,11,2462,2.4GHz,OPEN\nP29,5.1,9,KMITL-WIFI,00:2E:C7:90:94:61,-74,11,2462,2.4GHz,OPEN\nP30,6.8,9,KMITL-WIFI,00:2E:C7:90:94:61,-75,11,2462,2.4GHz,OPEN'
 
 def load_room_b_embedded():
@@ -288,11 +399,19 @@ def load_room_b_embedded():
     return pd.read_csv(io.StringIO(ROOM_B_EMBEDDED_CSV))
 
 
+# ============================================================
+# FIND DEFAULT CSV
+# ============================================================
+
 def find_default_file(filename):
     if os.path.exists(filename):
         return filename
     return None
 
+
+# ============================================================
+# GET ROOM SIZE
+# ============================================================
 
 def get_room_size(df, room_name):
     config = ROOMS[room_name]
@@ -311,6 +430,10 @@ def get_room_size(df, room_name):
     return room_x, room_y
 
 
+# ============================================================
+# CREATE 3D HEATMAP
+# ============================================================
+
 def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, show_furniture=True):
     """Room B: 6.80 x 9.00 m based on the supplied Room B model."""
     RX, RY, WH = 6.80, 9.00, 3.0
@@ -319,6 +442,7 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
 
     d = wifi.dropna(subset=["X", "Y", "RSSI"]).copy()
 
+    # Smooth RSSI heatmap
     if len(d) >= 3:
         gx = np.linspace(0, RX, 180)
         gy = np.linspace(0, RY, 240)
@@ -391,6 +515,7 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
     wall(0,0,0,RY,WH)
     wall(RX,0,RX,RY,WH)
 
+    # Double door on rear wall, centered around X=1.70 m
     door_mid, door_w, door_h = 1.70, 1.98, 2.05
     dx1, dx2 = door_mid-door_w/2, door_mid+door_w/2
     wall(0,RY,dx1,RY,WH)
@@ -429,11 +554,13 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
         return min(a,b),max(a,b)
 
     if show_furniture:
+        # Cabinets
         y1,y2=flip_y(7.50,8.44)
         box(0,0.78,y1,y2,0,1.85,"#2C3E50",0.9,"Cabinet 1")
         y1,y2=flip_y(0.50,1.44)
         box(0,0.78,y1,y2,0,1.85,"#2C3E50",0.9,"Cabinet 10")
 
+        # Tables 11-16
         for item,(ymin,ymax) in zip(
             [11,12,13,14,15,16],
             [(7.00,7.78),(6.20,6.98),(4.40,5.18),
@@ -442,6 +569,7 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
             y1,y2=flip_y(ymin,ymax)
             table(RX-1.84,RX,y1,y2,f"Table {item}")
 
+        # Tables 2-9
         grouped=[
             (2,0,1.84,5.40,6.18),(4,1.84,3.68,5.40,6.18),
             (3,0,1.84,4.60,5.38),(5,1.84,3.68,4.60,5.38),
@@ -452,6 +580,7 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
             y1,y2=flip_y(ymin,ymax)
             table(x1,x2,y1,y2,f"Table {item}")
 
+        # Object 17
         ox1,ox2 = RX-2.10, RX-2.88
         oy1,oy2 = flip_y(0.0,0.78)
         box(min(ox1,ox2),max(ox1,ox2),oy1,oy2,0,0.80,
@@ -480,6 +609,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
     WALL_HEIGHT = 3.0
     WALL_THICKNESS = 0.12
 
+    # Double glass door
     DOOR_EACH_W = 0.99
     DOOR_TOTAL_W = DOOR_EACH_W * 2
     DOOR_H = 2.05
@@ -497,6 +627,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
         }
     }
 
+    # FONT CONFIGURATION
     FONT_FAMILY = "Arial"
     FONT_SIZE = 10
     FONT_COLOR = "#4B5563"  
@@ -755,6 +886,10 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
 # ============================================================
 # ROOM A — COMBINED 3D HEATMAP (UPDATED LOGIC)
 # ============================================================
+ROOM_A_X = 7.20
+ROOM_A_Y = 8.40
+ROOM_A_WALL_THICKNESS = 0.12
+
 ROOM_A_LAYOUT = {
     "A1": {"room_key": "Room 1", "x_min": 0.0,   "x_max": 3.535, "y_min": 4.20, "y_max": 8.33},
     "A2": {"room_key": "Room 2", "x_min": 3.535, "x_max": 7.105, "y_min": 2.83, "y_max": 8.30},
@@ -822,7 +957,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         '4': {'x_min': 3.535, 'x_max': 7.105, 'y_min': 0., 'y_max': 2.83, 'color': '#E5E7EB'},
     }
 
-    # Original measurement data fallback mappings
+    # Original measurement data mapping
     room_a_data = {'X':[0,1.77,3.54,0,1.77,3.54,0,1.77,3.54], 'Y':[4.20,4.20,4.20,6.27,6.27,6.27,8.33,8.33,8.33], 'RSSI':[-70,-64,-68,-68,-74,-70,-77,-68,-75]}
     room_b_data = {'X':[3.535,5.315,7.105]*4, 'Y':[2.83]*3+[4.65]*3+[6.48]*3+[8.30]*3, 'RSSI':[-50,-66,-81,-85,-71,-75,-50,-70,-70,-70,-69,-71]}
     room_c_data = {'X':[0,1.77,3.54]*3, 'Y':[0]*3+[2.10]*3+[4.20]*3, 'RSSI':[-74,-62,-71,-63,-69,-70,-67,-60,-64]}
@@ -854,6 +989,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
 
     fig = go.Figure()
 
+    # Floors
     def add_room_floor(room_name, room):
         x1,x2,y1,y2 = room['x_min'],room['x_max'],room['y_min'],room['y_max']
         fig.add_trace(go.Mesh3d(x=[x1,x2,x2,x1],y=[y1,y1,y2,y2],z=[0]*4,
@@ -872,6 +1008,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     for room_name, room in ROOM_CONFIGS.items():
         add_room_floor(room_name, room)
 
+    # Walls
     def add_wall(x1,y1,x2,y2,height=WALL_HEIGHT,z0=0):
         dx,dy=x2-x1,y2-y1
         length=np.hypot(dx,dy)
@@ -924,6 +1061,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
             used_label_positions.append((px,py))
         return lx,ly
 
+    # Heatmap Generator
     def add_room_heatmap(room_name, room_data, start_point=1):
         if not room_data or len(room_data.get('X', [])) == 0: return
         room=ROOM_CONFIGS[room_name]
@@ -946,6 +1084,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         else:
             GZ = nearest
 
+        # ยก Z ขึ้นเป็น 0.20 ให้เห็นชัดเจน
         Z_PLANE = np.full_like(GZ, 0.20)
 
         fig.add_trace(go.Surface(x=GX,y=GY,z=Z_PLANE,surfacecolor=GZ,
@@ -956,116 +1095,115 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
                                  name=f'Heatmap Room {room_name}',
                                  hovertemplate='X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{surfacecolor:.1f} dBm<extra></extra>'))
 
-        if show_points:
-            point_labels=[f'P{i:02d}' for i in range(start_point,start_point+len(xv))]
+        point_labels=[f'P{i:02d}' for i in range(start_point,start_point+len(xv))]
 
-            fig.add_trace(go.Scatter3d(x=xv,y=yv,z=np.full(len(xv),POINT_HEIGHT),mode='markers',
-                                       marker=dict(size=4,color='#1F2937',line=dict(width=1,color='white')),
-                                       customdata=np.column_stack((point_labels, rv)),
-                                       hovertemplate='Point: %{customdata[0]}<br>X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata[1]} dBm<extra></extra>',
-                                       name=f'Survey Points Room {room_name}',showlegend=False))
+        fig.add_trace(go.Scatter3d(x=xv,y=yv,z=np.full(len(xv),POINT_HEIGHT),mode='markers',
+                                   marker=dict(size=4,color='#1F2937',line=dict(width=1,color='white')),
+                                   customdata=np.column_stack((point_labels, rv)),
+                                   hovertemplate='Point: %{customdata[0]}<br>X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata[1]} dBm<extra></extra>',
+                                   name=f'Survey Points Room {room_name}',showlegend=False))
 
-            lx,ly=place_labels(xv,yv,room)
-            fig.add_trace(go.Scatter3d(x=lx,y=ly,z=np.full(len(lx),TEXT_HEIGHT),mode='text',
-                                       text=point_labels,textposition='middle center',
-                                       textfont=dict(family=FONT_FAMILY,size=POINT_FONT_SIZE,color=POINT_FONT_COLOR),
-                                       hoverinfo='skip',name=f'Point Labels Room {room_name}',showlegend=False))
+        lx,ly=place_labels(xv,yv,room)
+        fig.add_trace(go.Scatter3d(x=lx,y=ly,z=np.full(len(lx),TEXT_HEIGHT),mode='text',
+                                   text=point_labels,textposition='middle center',
+                                   textfont=dict(family=FONT_FAMILY,size=POINT_FONT_SIZE,color=POINT_FONT_COLOR),
+                                   hoverinfo='skip',name=f'Point Labels Room {room_name}',showlegend=False))
 
     add_room_heatmap('1', ROOM_DATA.get('1', {}), 1)
     add_room_heatmap('2', ROOM_DATA.get('2', {}), 1)
     add_room_heatmap('3', ROOM_DATA.get('3', {}), 1)
     add_room_heatmap('4', ROOM_DATA.get('4', {}), 1)
 
-    if show_furniture:
-        def add_box(x,y,z,w,l,h,color,name):
-            x0,x1=x-w/2,x+w/2
-            y0,y1=y-l/2,y+l/2
-            z0,z1=z,z+h
-            xs=[x0,x1,x1,x0,x0,x1,x1,x0]
-            ys=[y0,y0,y1,y1,y0,y0,y1,y1]
-            zs=[z0,z0,z0,z0,z1,z1,z1,z1]
-            i=[0,0,4,4,0,0,2,2,0,0,1,1]
-            j=[1,2,5,6,1,5,3,7,3,7,2,6]
-            k=[2,3,6,7,5,4,7,6,7,4,6,5]
-            fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color=color,opacity=1.,name=name,hoverinfo='name',showlegend=False))
+    # Furniture
+    def add_box(x,y,z,w,l,h,color,name):
+        x0,x1=x-w/2,x+w/2
+        y0,y1=y-l/2,y+l/2
+        z0,z1=z,z+h
+        xs=[x0,x1,x1,x0,x0,x1,x1,x0]
+        ys=[y0,y0,y1,y1,y0,y0,y1,y1]
+        zs=[z0,z0,z0,z0,z1,z1,z1,z1]
+        i=[0,0,4,4,0,0,2,2,0,0,1,1]
+        j=[1,2,5,6,1,5,3,7,3,7,2,6]
+        k=[2,3,6,7,5,4,7,6,7,4,6,5]
+        fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color=color,opacity=1.,name=name,hoverinfo='name',showlegend=False))
 
-        def add_table(name,x,y,z,w,l,h):
-            top_color,leg_color='#D4A373','#582F0E'
-            top_thickness,leg_size=0.05,0.06
-            add_box(x,y,z+h-top_thickness,w,l,top_thickness,top_color,f'{name} (Top)')
-            for sx in (-1,1):
-                for sy in (-1,1):
-                    add_box(x+sx*(w/2-leg_size/2),y+sy*(l/2-leg_size/2),z,
-                            leg_size,leg_size,h-top_thickness,leg_color,f'{name} (Leg)')
+    def add_table(name,x,y,z,w,l,h):
+        top_color,leg_color='#D4A373','#582F0E'
+        top_thickness,leg_size=0.05,0.06
+        add_box(x,y,z+h-top_thickness,w,l,top_thickness,top_color,f'{name} (Top)')
+        for sx in (-1,1):
+            for sy in (-1,1):
+                add_box(x+sx*(w/2-leg_size/2),y+sy*(l/2-leg_size/2),z,
+                        leg_size,leg_size,h-top_thickness,leg_color,f'{name} (Leg)')
 
-        def add_cabinet(name,x,y,z,w,l,h):
-            add_box(x,y,z,w,l,h,'#A0522D',name)
+    def add_cabinet(name,x,y,z,w,l,h):
+        add_box(x,y,z,w,l,h,'#A0522D',name)
 
-        def add_glass_swing_door(name,hinge_x,hinge_y,w,h,t,angle_deg):
-            a=np.radians(angle_deg)
-            px1,py1=hinge_x,hinge_y
-            px2,py2=hinge_x+w*np.cos(a),hinge_y+w*np.sin(a)
-            px3,py3=px2-t*np.sin(a),py2+t*np.cos(a)
-            px4,py4=px1-t*np.sin(a),py1+t*np.cos(a)
-            xs=[px1,px2,px3,px4]*2
-            ys=[py1,py2,py3,py4]*2
-            zs=[0]*4+[h]*4
-            i=[0,0,4,4,0,0,2,2,0,0,1,1]
-            j=[1,2,5,6,1,5,3,7,3,7,2,6]
-            k=[2,3,6,7,5,4,7,6,7,4,6,5]
-            fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color='#38BDF8',opacity=0.45,name=name,hoverinfo='name',showlegend=False))
+    def add_glass_swing_door(name,hinge_x,hinge_y,w,h,t,angle_deg):
+        a=np.radians(angle_deg)
+        px1,py1=hinge_x,hinge_y
+        px2,py2=hinge_x+w*np.cos(a),hinge_y+w*np.sin(a)
+        px3,py3=px2-t*np.sin(a),py2+t*np.cos(a)
+        px4,py4=px1-t*np.sin(a),py1+t*np.cos(a)
+        xs=[px1,px2,px3,px4]*2
+        ys=[py1,py2,py3,py4]*2
+        zs=[0]*4+[h]*4
+        i=[0,0,4,4,0,0,2,2,0,0,1,1]
+        j=[1,2,5,6,1,5,3,7,3,7,2,6]
+        k=[2,3,6,7,5,4,7,6,7,4,6,5]
+        fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color='#38BDF8',opacity=0.45,name=name,hoverinfo='name',showlegend=False))
 
-        def add_sliding_door(name,x,y,length,t,h,orientation='horizontal'):
-            if orientation=='horizontal':
-                x0,x1=x,x+length
-                y0,y1=y-t/2,y+t/2
-            else:
-                x0,x1=x-t/2,x+t/2
-                y0,y1=y,y+length
-            xs=[x0,x1,x1,x0]*2
-            ys=[y0,y0,y1,y1]*2
-            zs=[0]*4+[h]*4
-            i=[0,0,4,4,0,0,2,2,0,0,1,1]
-            j=[1,2,5,6,1,5,3,7,3,7,2,6]
-            k=[2,3,6,7,5,4,7,6,7,4,6,5]
-            fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color='#38BDF8',opacity=0.45,name=name,hoverinfo='name',showlegend=False))
+    def add_sliding_door(name,x,y,length,t,h,orientation='horizontal'):
+        if orientation=='horizontal':
+            x0,x1=x,x+length
+            y0,y1=y-t/2,y+t/2
+        else:
+            x0,x1=x-t/2,x+t/2
+            y0,y1=y,y+length
+        xs=[x0,x1,x1,x0]*2
+        ys=[y0,y0,y1,y1]*2
+        zs=[0]*4+[h]*4
+        i=[0,0,4,4,0,0,2,2,0,0,1,1]
+        j=[1,2,5,6,1,5,3,7,3,7,2,6]
+        k=[2,3,6,7,5,4,7,6,7,4,6,5]
+        fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color='#38BDF8',opacity=0.45,name=name,hoverinfo='name',showlegend=False))
 
-        T_WIDTH,T_LENGTH,T_HEIGHT=0.73,1.83,0.80
+    T_WIDTH,T_LENGTH,T_HEIGHT=0.73,1.83,0.80
 
-        # Room 1
-        center_x1,center_y1=(0+3.535)/2,(4.20+8.33)/2
-        add_table('Table 1 (Room 1)',center_x1,center_y1+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        add_table('Table 2 (Room 1)',center_x1,center_y1-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        add_sliding_door('Sliding Door 1',x=DOOR_1_X,y=4.20-(WALL_THICKNESS/2+0.01),length=DOOR_1_W,t=0.04,h=DOOR_1_H,orientation='horizontal')
+    # Room 1
+    center_x1,center_y1=(0+3.535)/2,(4.20+8.33)/2
+    add_table('Table 1 (Room 1)',center_x1,center_y1+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    add_table('Table 2 (Room 1)',center_x1,center_y1-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    add_sliding_door('Sliding Door 1',x=DOOR_1_X,y=4.20-(WALL_THICKNESS/2+0.01),length=DOOR_1_W,t=0.04,h=DOOR_1_H,orientation='horizontal')
 
-        # Room 2
-        center_x2,center_y2=(3.535+7.105)/2,(2.83+8.30)/2
-        GAP=0.50
-        add_table('Table 2 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        add_table('Table 1 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        add_table('Table 3 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        add_table('Table 4 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        DOOR_2_X=3.535+(WALL_THICKNESS/2+0.01)
-        add_sliding_door('Sliding Door (Room 2)',x=DOOR_2_X,y=3.03,length=0.97,t=0.04,h=2.06,orientation='vertical')
+    # Room 2
+    center_x2,center_y2=(3.535+7.105)/2,(2.83+8.30)/2
+    GAP=0.50
+    add_table('Table 2 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    add_table('Table 1 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    add_table('Table 3 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    add_table('Table 4 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    DOOR_2_X=3.535+(WALL_THICKNESS/2+0.01)
+    add_sliding_door('Sliding Door (Room 2)',x=DOOR_2_X,y=3.03,length=0.97,t=0.04,h=2.06,orientation='vertical')
 
-        # Room 3
-        center_y3=(0.+4.20)/2
-        table1_x_pos=T_WIDTH/2+WALL_THICKNESS/2
-        add_table('Table 1 (Room 3)',table1_x_pos,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
-        add_table('Table 2 (Room 3)',table1_x_pos+T_WIDTH,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
-        CABINET_W,CABINET_L,CABINET_H=0.49,0.95,1.86
-        cabinet_x_pos=WALL_THICKNESS/2+CABINET_W/2
-        cabinet_y_pos=4.20-WALL_THICKNESS/2-CABINET_L/2
-        add_cabinet('Cabinet (Room 3)',cabinet_x_pos,cabinet_y_pos,0,CABINET_W,CABINET_L,CABINET_H)
-        add_glass_swing_door('Left Swing Door (Room 3)',hinge_x=1.03,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=45)
-        add_glass_swing_door('Right Swing Door (Room 3)',hinge_x=2.97,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=135)
+    # Room 3
+    center_y3=(0.+4.20)/2
+    table1_x_pos=T_WIDTH/2+WALL_THICKNESS/2
+    add_table('Table 1 (Room 3)',table1_x_pos,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
+    add_table('Table 2 (Room 3)',table1_x_pos+T_WIDTH,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
+    CABINET_W,CABINET_L,CABINET_H=0.49,0.95,1.86
+    cabinet_x_pos=WALL_THICKNESS/2+CABINET_W/2
+    cabinet_y_pos=4.20-WALL_THICKNESS/2-CABINET_L/2
+    add_cabinet('Cabinet (Room 3)',cabinet_x_pos,cabinet_y_pos,0,CABINET_W,CABINET_L,CABINET_H)
+    add_glass_swing_door('Left Swing Door (Room 3)',hinge_x=1.03,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=45)
+    add_glass_swing_door('Right Swing Door (Room 3)',hinge_x=2.97,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=135)
 
-        # Room 4
-        center_x4,center_y4=(3.535+7.105)/2,(0.+2.83)/2
-        add_table('Table 1 (Room 4)',center_x4,center_y4+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        add_table('Table 2 (Room 4)',center_x4,center_y4-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-        DOOR_4_X=3.535-(WALL_THICKNESS/2+0.01)
-        add_sliding_door('Sliding Door (Room 4)',x=DOOR_4_X,y=1.86,length=0.97,t=0.04,h=2.06,orientation='vertical')
+    # Room 4
+    center_x4,center_y4=(3.535+7.105)/2,(0.+2.83)/2
+    add_table('Table 1 (Room 4)',center_x4,center_y4+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    add_table('Table 2 (Room 4)',center_x4,center_y4-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+    DOOR_4_X=3.535-(WALL_THICKNESS/2+0.01)
+    add_sliding_door('Sliding Door (Room 4)',x=DOOR_4_X,y=1.86,length=0.97,t=0.04,h=2.06,orientation='vertical')
 
     fig.update_layout(
         title=dict(text='3D Wi-Fi RSSI Heatmap',x=0.5,font=dict(size=22,color='#111827',family=FONT_FAMILY)),
@@ -1078,4 +1216,1278 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
                    camera=dict(eye=dict(x=1.35,y=1.35,z=0.9))),
         width=1350,height=850,margin=dict(l=0,r=0,t=70,b=0))
 
+    if not show_points:
+        fig.data = tuple(t for t in fig.data if not ((getattr(t, 'name', '') or '').startswith(('Survey Points Room', 'Point Labels Room'))))
+    if not show_furniture:
+        fig.data = tuple(t for t in fig.data if not ((getattr(t, 'name', '') or '').startswith(('Table ', 'Cabinet ', 'Sliding Door', 'Left Swing Door', 'Right Swing Door'))))
+
     return fig
+
+
+# ============================================================
+# SMART WI-FI ADVISOR
+# ============================================================
+
+def analyze_wifi_recommendation(df):
+    """
+    Compare SSIDs using average RSSI, percentage of good measurements,
+    signal stability, and a penalty for weak measurements.
+    """
+    if df is None or df.empty or "SSID" not in df.columns:
+        return pd.DataFrame()
+
+    results = []
+
+    for ssid, group in df.groupby("SSID"):
+        rssi = pd.to_numeric(group["RSSI"], errors="coerce").dropna()
+        if rssi.empty:
+            continue
+
+        avg_rssi = float(rssi.mean())
+        min_rssi = float(rssi.min())
+        max_rssi = float(rssi.max())
+        std_rssi = float(rssi.std()) if len(rssi) > 1 else 0.0
+        if np.isnan(std_rssi):
+            std_rssi = 0.0
+
+        total = len(rssi)
+        good_percent = float((rssi >= -65).sum() / total * 100)
+        weak_percent = float((rssi <= -75).sum() / total * 100)
+
+        # Normalize -90..-50 dBm to 0..100.
+        rssi_score = float(np.clip(((avg_rssi + 90) / 40) * 100, 0, 100))
+        stability_score = float(np.clip(100 - std_rssi * 8, 0, 100))
+
+        score = (
+            rssi_score * 0.50
+            + good_percent * 0.25
+            + stability_score * 0.15
+            + (100 - weak_percent) * 0.10
+        )
+
+        if avg_rssi >= -60:
+            quality = "Excellent"
+        elif avg_rssi >= -67:
+            quality = "Good"
+        elif avg_rssi >= -75:
+            quality = "Fair"
+        else:
+            quality = "Weak"
+
+        results.append({
+            "SSID": str(ssid),
+            "Average RSSI": avg_rssi,
+            "Weakest RSSI": min_rssi,
+            "Strongest RSSI": max_rssi,
+            "Stability": std_rssi,
+            "Good Signal (%)": good_percent,
+            "Weak Signal (%)": weak_percent,
+            "Measurements": total,
+            "Score": score,
+            "Quality": quality,
+        })
+
+    result = pd.DataFrame(results)
+    if not result.empty:
+        result = result.sort_values(
+            ["Score", "Average RSSI"],
+            ascending=[False, False]
+        ).reset_index(drop=True)
+
+    return result
+
+
+def recommend_wifi_at_point(df, point):
+    """
+    Recommend an SSID at one measured survey point.
+    If an SSID has multiple BSSIDs, use its strongest observed BSSID
+    at that point.
+    """
+    if df is None or df.empty:
+        return None, pd.DataFrame()
+
+    point_data = df[
+        df["Point"].astype(str) == str(point)
+    ].copy()
+
+    if point_data.empty:
+        return None, pd.DataFrame()
+
+    point_summary = (
+        point_data
+        .groupby("SSID")
+        .agg(
+            RSSI=("RSSI", "max"),
+            AP_Count=("BSSID", "nunique")
+        )
+        .reset_index()
+        .sort_values("RSSI", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    if point_summary.empty:
+        return None, point_summary
+
+    return point_summary.iloc[0], point_summary
+
+
+def signal_quality(rssi, language="ไทย"):
+    if rssi >= -60:
+        return ("🟢 Excellent", "สัญญาณแรงมาก เหมาะสำหรับ Video Call, Streaming และงานที่ต้องการความเสถียร") \
+            if language == "ไทย" else ("🟢 Excellent", "Very strong signal for video calls, streaming and demanding use.")
+    if rssi >= -67:
+        return ("🟢 Good", "สัญญาณดี เหมาะสำหรับการใช้งานทั่วไปและ Video Call") \
+            if language == "ไทย" else ("🟢 Good", "Good signal for general use and video calls.")
+    if rssi >= -75:
+        return ("🟡 Fair", "สามารถใช้งานได้ แต่อาจมีความไม่เสถียรในบางช่วง") \
+            if language == "ไทย" else ("🟡 Fair", "Usable signal, but performance may be less stable.")
+    return ("🔴 Weak", "สัญญาณค่อนข้างอ่อน แนะนำให้ลอง Wi-Fi อื่นหรือขยับเข้าใกล้ Access Point") \
+        if language == "ไทย" else ("🔴 Weak", "Weak signal. Try another Wi-Fi or move closer to an access point.")
+
+
+# ============================================================
+# LANGUAGE / DISPLAY HELPERS
+# ============================================================
+
+TEXT = {
+    "ไทย": {
+        "settings": "📂 นำเข้าและตั้งค่า", "language": "🌐 ภาษา / Language",
+        "area_select": "เลือกพื้นที่", "area": "พื้นที่", "subroom": "เลือกห้องย่อย",
+        "default_file": "ไฟล์เริ่มต้น", "upload": "อัปโหลดข้อมูล Survey",
+        "ssid": "📶 เลือก SSID", "opacity": "ความโปร่งใส Heatmap",
+        "layers": "เลเยอร์แผนที่ 3D", "show_ap": "แสดงตำแหน่ง AP",
+        "show_points": "แสดงจุด Survey", "show_furniture": "แสดงผนังและเฟอร์นิเจอร์",
+        "survey_area": "พื้นที่สำรวจ", "location": "ตำแหน่ง", "current_room": "ห้องปัจจุบัน",
+        "room_size": "ขนาดห้อง", "frequency": "ความถี่", "survey_points": "จุดสำรวจ",
+        "access_points": "Access Points", "avg_rssi": "RSSI เฉลี่ย", "strong": "สัญญาณดี",
+        "weak": "สัญญาณอ่อน", "map": "🗺️ แผนที่ 3D", "analysis": "📊 วิเคราะห์",
+        "raw": "📋 ข้อมูลดิบ", "signal_summary": "📶 สรุปคุณภาพสัญญาณ",
+        "excellent": "ดี", "fair": "ปานกลาง", "poor": "อ่อน",
+    },
+    "English": {
+        "settings": "📂 Import & Settings", "language": "🌐 Language / ภาษา",
+        "area_select": "Select Area", "area": "Area", "subroom": "Select Subroom",
+        "default_file": "Default file", "upload": "Upload Survey Data",
+        "ssid": "📶 Select SSID", "opacity": "Heatmap Opacity",
+        "layers": "3D Map Layers", "show_ap": "Show AP Position",
+        "show_points": "Show Survey Points", "show_furniture": "Show Walls & Furniture",
+        "survey_area": "Survey Area", "location": "Location", "current_room": "Current Room",
+        "room_size": "Room Size", "frequency": "Frequency", "survey_points": "Survey Points",
+        "access_points": "Access Points", "avg_rssi": "Average RSSI", "strong": "Strong Signal",
+        "weak": "Weak Signal", "map": "🗺️ 3D Map", "analysis": "📊 Analysis",
+        "raw": "📋 Raw Data", "signal_summary": "📶 Signal Quality Summary",
+        "excellent": "Good", "fair": "Fair", "poor": "Weak",
+    }
+}
+
+ROOM_A_DISPLAY = {"A1": "Room 1", "A2": "Room 2", "A3": "Room 3", "A4": "Room 4"}
+ROOM_DISPLAY = {"Room 1": "A1", "Room 2": "A2", "Room 3": "A3", "Room 4": "A4",
+                "Room B": "B", "Room C": "C"}
+
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+with st.sidebar:
+
+    language = st.selectbox(
+        "🌐 ภาษา / Language",
+        ["ไทย", "English"],
+        index=0,
+        key="language_selector"
+    )
+    t = TEXT[language]
+
+    st.header(t["settings"])
+    st.subheader(t["area_select"])
+
+    # เรียงพื้นที่ตามลำดับ A → B → C
+    selected_area = st.radio(
+        t["area"],
+        ["Room A", "Room B", "Room C"],
+        index=0
+    )
+
+    # Room A can be used as one complete survey area or as A1-A4.
+    if selected_area == "Room A":
+        room_a_options = (
+            ["ภาพรวม Room A", "A1", "A2", "A3", "A4"]
+            if language == "ไทย"
+            else ["Room A Overview", "A1", "A2", "A3", "A4"]
+        )
+
+        st.markdown(
+            "#### 🚪 ห้องย่อย Room A"
+            if language == "ไทย"
+            else "#### 🚪 Room A Subrooms"
+        )
+
+        selected_subroom = st.selectbox(
+            "เลือกมุมมอง / ห้องย่อย"
+            if language == "ไทย"
+            else "Select overview / subroom",
+            room_a_options,
+            key="room_a_view"
+        )
+
+        if selected_subroom in ["ภาพรวม Room A", "Room A Overview"]:
+            selected_room = "Room A"
+        else:
+            selected_room = ROOM_A_DISPLAY[selected_subroom]
+    else:
+        selected_room = selected_area
+
+    display_room = ROOM_DISPLAY.get(selected_room, selected_room)
+    st.divider()
+
+    # ========================================================
+    # FILE
+    # ========================================================
+
+    default_filename = ROOMS[
+        selected_room
+    ]["file"]
+
+    if selected_room == "Room A":
+        st.caption(
+            "ข้อมูล Room A: A1 + A2 + A3 + A4"
+            if language == "ไทย"
+            else "Room A data: A1 + A2 + A3 + A4"
+        )
+    else:
+        st.caption(
+            f"{t['default_file']}: `{default_filename}`"
+        )
+
+    uploaded_file = st.file_uploader(
+        t["upload"],
+        type=[
+            "csv",
+            "xlsx"
+        ],
+        key=f"upload_{selected_room}"
+    )
+
+
+# ============================================================
+# LOAD FILE
+# ============================================================
+
+if uploaded_file is not None:
+    uploaded_df = load_data(uploaded_file)
+    if selected_room == "Room B":
+        base_df = load_room_b_embedded()
+        df = pd.concat([base_df, uploaded_df], ignore_index=True)
+        df = df.drop_duplicates(subset=["Point", "SSID", "BSSID"], keep="last")
+    else:
+        df = uploaded_df
+
+elif selected_room == "Room A":
+
+    # ภาพรวม Room A: รวมข้อมูล A1-A4
+    df = load_room_a_combined_data()
+
+    if df is None or df.empty:
+        st.error(
+            "❌ ไม่สามารถโหลดข้อมูล Room A (A1-A4) ได้"
+            if language == "ไทย"
+            else "❌ Unable to load Room A data (A1-A4)."
+        )
+        st.stop()
+
+elif selected_room in ["Room 1", "Room 2", "Room 3", "Room 4"]:
+
+    # A1-A4: ใช้ CSV ถ้ามี และใช้ข้อมูล fallback ที่ฝังไว้ถ้าไม่มีไฟล์
+    df = _load_room_a_csv(selected_room)
+
+    if df is None or df.empty:
+        st.error(
+            f"❌ ไม่พบข้อมูล {ROOM_DISPLAY.get(selected_room, selected_room)}"
+            if language == "ไทย"
+            else f"❌ No data found for {ROOM_DISPLAY.get(selected_room, selected_room)}."
+        )
+        st.stop()
+
+else:
+
+    default_file = find_default_file(
+        default_filename
+    )
+
+    if selected_room == "Room B":
+        df = load_room_b_embedded()
+
+    elif default_file is not None:
+
+        try:
+
+            df = pd.read_csv(
+                default_file,
+                skipinitialspace=True
+            )
+
+            df.columns = (
+                df.columns
+                .astype(str)
+                .str.strip()
+            )
+
+            rename_mapping = {
+
+                "Point ID": "Point",
+                "X (m)": "X",
+                "Y (m)": "Y",
+                "RSSI (dBm)": "RSSI",
+                "Frequency (MHz)": "Frequency"
+            }
+
+            df.rename(
+                columns=rename_mapping,
+                inplace=True
+            )
+
+            # Convert
+            df["X"] = pd.to_numeric(
+                df["X"],
+                errors="coerce"
+            )
+
+            df["Y"] = pd.to_numeric(
+                df["Y"],
+                errors="coerce"
+            )
+
+            df["RSSI"] = pd.to_numeric(
+                df["RSSI"],
+                errors="coerce"
+            )
+
+            if "Channel" in df.columns:
+
+                df["Channel"] = pd.to_numeric(
+                    df["Channel"],
+                    errors="coerce"
+                )
+
+            df = df.dropna(
+                subset=[
+                    "X",
+                    "Y",
+                    "RSSI"
+                ]
+            ).copy()
+
+        except Exception as e:
+
+            st.error(
+                f"ไม่สามารถอ่าน `{default_filename}` ได้: {e}"
+            )
+
+            st.stop()
+
+    elif selected_room == "Room B":
+        # Built-in 30-point data works without any separate CSV on Streamlit Cloud.
+        df = load_room_b_embedded()
+
+    else:
+
+        st.info(
+            f"""
+👆 ยังไม่พบไฟล์ `{default_filename}`
+
+สามารถอัปโหลดไฟล์ CSV/XLSX
+ด้านซ้ายเพื่อเริ่มใช้งาน
+"""
+        )
+
+        st.stop()
+
+
+# ============================================================
+# CHECK DATA
+# ============================================================
+
+if df is None or df.empty:
+
+    st.error(
+        "❌ ไม่พบข้อมูล Survey"
+    )
+
+    st.stop()
+
+
+# ============================================================
+# ROOM SIZE
+# ============================================================
+
+ROOM_X, ROOM_Y = get_room_size(
+    df,
+    selected_room
+)
+
+
+# ============================================================
+# SIDEBAR CONTROLS
+# ============================================================
+
+with st.sidebar:
+
+    st.divider()
+
+    # ========================================================
+    # SSID
+    # ========================================================
+
+    st.subheader(
+        t["ssid"]
+    )
+
+    if "SSID" in df.columns:
+
+        ssid_options = sorted(
+            df["SSID"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        selected_ssids = st.multiselect(
+            "SSID",
+            options=ssid_options,
+            default=ssid_options
+        )
+
+    else:
+
+        selected_ssids = []
+
+        st.warning(
+            "ไม่พบ Column SSID"
+        )
+
+    # ========================================================
+    # HEATMAP OPACITY
+    # ========================================================
+
+    opacity = st.slider(
+        t["opacity"],
+        0.0,
+        1.0,
+        0.85,
+        0.05
+    )
+
+    # ========================================================
+    # 3D LAYERS
+    # ========================================================
+
+    st.divider()
+
+    st.subheader(
+        t["layers"]
+    )
+
+    show_ap = st.checkbox(
+        t["show_ap"],
+        True
+    )
+
+    show_points = st.checkbox(
+        t["show_points"],
+        True
+    )
+
+    show_furniture = st.checkbox(
+        t["show_furniture"],
+        True
+    )
+
+
+# ============================================================
+# FILTER SSID
+# ============================================================
+
+if selected_ssids:
+
+    wifi = df[
+        df["SSID"]
+        .astype(str)
+        .isin(selected_ssids)
+    ].copy()
+
+else:
+
+    wifi = df.copy()
+
+
+# ============================================================
+# SMART WI-FI RECOMMENDATION FOR CURRENT ROOM
+# ============================================================
+
+wifi_recommendation = analyze_wifi_recommendation(wifi)
+best_wifi = (
+    wifi_recommendation.iloc[0]
+    if not wifi_recommendation.empty
+    else None
+)
+
+
+# ============================================================
+# HEADER
+# ============================================================
+
+page_subtitle = (
+    "ระบบวิเคราะห์คุณภาพสัญญาณและแนะนำ Wi-Fi ตามพื้นที่ใช้งาน"
+    if language == "ไทย"
+    else "Wireless signal analysis and smart Wi-Fi recommendation dashboard"
+)
+
+st.markdown(
+    f"""
+    <div class="dashboard-title">ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา</div>
+    <div class="dashboard-subtitle">Portable Wireless Site Survey and Network Analysis System</div>
+    <div class="room-badge">📍 {display_room}</div>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# ============================================================
+# ROOM INFORMATION
+# ============================================================
+
+col_info, col_blank = st.columns(
+    [1, 1]
+)
+
+with col_info:
+
+    st.markdown(
+        f"""
+**{t["survey_area"]}:** Telecommunication Engineering Department  
+**{t["location"]}:** 3rd Floor – Co-working Space  
+**{t["current_room"]}:** {display_room}  
+**{t["room_size"]}:** {ROOM_X:.2f} × {ROOM_Y:.2f} m  
+**{t["frequency"]}:** 2.4 GHz
+"""
+    )
+
+
+# ============================================================
+# QUICK RECOMMENDATION
+# ============================================================
+
+if best_wifi is not None:
+    best_ssid = best_wifi["SSID"]
+    best_avg = float(best_wifi["Average RSSI"])
+    best_good = float(best_wifi["Good Signal (%)"])
+    best_quality = best_wifi["Quality"]
+
+    if language == "ไทย":
+        recommendation_title = f"Wi-Fi แนะนำสำหรับห้อง {display_room}"
+        recommendation_detail = (
+            f"RSSI เฉลี่ย {best_avg:.1f} dBm • "
+            f"จุดวัดสัญญาณดี {best_good:.1f}% • "
+            f"คุณภาพ {best_quality}"
+        )
+    else:
+        recommendation_title = f"Recommended Wi-Fi for {display_room}"
+        recommendation_detail = (
+            f"Average RSSI {best_avg:.1f} dBm • "
+            f"Good measurements {best_good:.1f}% • "
+            f"Quality {best_quality}"
+        )
+
+    st.markdown(
+        f"""
+        <div class="recommend-card">
+            <div class="recommend-label">✨ {recommendation_title}</div>
+            <div class="recommend-wifi">📶 {best_ssid}</div>
+            <div class="recommend-rssi">{recommendation_detail}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# ============================================================
+# OVERVIEW
+# ============================================================
+
+if not wifi.empty:
+
+    total_points = (
+        wifi["Point"]
+        .nunique()
+    )
+
+    detected_aps = (
+        wifi["BSSID"]
+        .nunique()
+    )
+
+    avg_rssi = (
+        wifi["RSSI"]
+        .mean()
+    )
+
+    strong_signals = len(
+        wifi[
+            wifi["RSSI"] >= -65
+        ]
+    )
+
+    weak_signals = len(
+        wifi[
+            wifi["RSSI"] <= -75
+        ]
+    )
+
+    # --------------------------------------------------------
+    # KPI ROW 1
+    # --------------------------------------------------------
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric(
+        f"📍 {t['survey_points']}",
+        total_points
+    )
+
+    c2.metric(
+        f"📡 {t['access_points']}",
+        detected_aps
+    )
+
+    c3.metric(
+        f"📈 {t['avg_rssi']}",
+        f"{avg_rssi:.1f} dBm"
+    )
+
+    # --------------------------------------------------------
+    # KPI ROW 2
+    # --------------------------------------------------------
+
+    c4, c5, c6 = st.columns(3)
+
+    c4.metric(
+        f"🟢 {t['strong']} (>= -65 dBm)",
+        strong_signals
+    )
+
+    c5.metric(
+        f"🔴 {t['weak']} (<= -75 dBm)",
+        weak_signals
+    )
+
+    c6.metric(
+        f"📐 {t['room_size']}",
+        f"{ROOM_X:.2f} × {ROOM_Y:.2f} m"
+    )
+
+    # Signal quality summary based on measured records
+    st.subheader(t["signal_summary"])
+    total_records = max(len(wifi), 1)
+    good_n = int((wifi["RSSI"] >= -65).sum())
+    fair_n = int(((wifi["RSSI"] < -65) & (wifi["RSSI"] > -75)).sum())
+    weak_n = int((wifi["RSSI"] <= -75).sum())
+    q1, q2, q3 = st.columns(3)
+    q1.metric(f"🟢 {t['excellent']} (≥ -65 dBm)", f"{good_n / total_records * 100:.1f}%", f"{good_n} records")
+    q2.metric(f"🟡 {t['fair']} (-75 to -65 dBm)", f"{fair_n / total_records * 100:.1f}%", f"{fair_n} records")
+    q3.metric(f"🔴 {t['poor']} (≤ -75 dBm)", f"{weak_n / total_records * 100:.1f}%", f"{weak_n} records")
+
+
+st.markdown(
+    "────────────────────────────────────────────"
+)
+
+
+# ============================================================
+# TABS
+# ============================================================
+
+if not wifi.empty:
+
+    tab_overview, tab_map, tab_advisor, tab_analysis, tab_raw = st.tabs(
+        [
+            "🏠 Overview" if language == "English" else "🏠 ภาพรวม",
+            t["map"],
+            "🤖 Wi-Fi Advisor",
+            t["analysis"],
+            t["raw"]
+        ]
+    )
+
+    # ========================================================
+    # OVERVIEW TAB
+    # ========================================================
+
+    with tab_overview:
+        st.subheader(
+            f"🏠 {'ภาพรวมห้อง' if language == 'ไทย' else 'Room Overview'} {display_room}"
+        )
+
+        if best_wifi is not None:
+            oc1, oc2, oc3, oc4 = st.columns(4)
+            oc1.metric("📶 Recommended Wi-Fi" if language == "English" else "📶 Wi-Fi แนะนำ",
+                       best_wifi["SSID"])
+            oc2.metric("📈 Average RSSI" if language == "English" else "📈 RSSI เฉลี่ย",
+                       f"{best_wifi['Average RSSI']:.1f} dBm")
+            oc3.metric("🟢 Good Signal" if language == "English" else "🟢 จุดวัดสัญญาณดี",
+                       f"{best_wifi['Good Signal (%)']:.1f}%")
+            oc4.metric("⭐ Advisor Score" if language == "English" else "⭐ คะแนนแนะนำ",
+                       f"{best_wifi['Score']:.0f}/100")
+
+        st.markdown(
+            "### 📊 Wi-Fi Comparison"
+            if language == "English"
+            else "### 📊 เปรียบเทียบ Wi-Fi ในห้องนี้"
+        )
+
+        if not wifi_recommendation.empty:
+            overview_table = wifi_recommendation[
+                [
+                    "SSID",
+                    "Average RSSI",
+                    "Weakest RSSI",
+                    "Good Signal (%)",
+                    "Weak Signal (%)",
+                    "Score",
+                    "Quality"
+                ]
+            ].copy()
+
+            for col in [
+                "Average RSSI",
+                "Weakest RSSI",
+                "Good Signal (%)",
+                "Weak Signal (%)",
+                "Score"
+            ]:
+                overview_table[col] = overview_table[col].round(1)
+
+            st.dataframe(
+                overview_table,
+                use_container_width=True,
+                hide_index=True
+            )
+
+        st.caption(
+            "คำแนะนำคำนวณจากข้อมูล Survey ของห้องที่เลือก โดยพิจารณา RSSI เฉลี่ย "
+            "ความสม่ำเสมอ และสัดส่วนจุดวัดที่สัญญาณดี/อ่อน"
+            if language == "ไทย"
+            else
+            "Recommendations use the selected room's survey data, considering average RSSI, "
+            "stability, and the share of good/weak measurements."
+        )
+
+    # ========================================================
+    # WI-FI ADVISOR TAB
+    # ========================================================
+
+    with tab_advisor:
+        st.subheader("🤖 Wi-Fi Advisor")
+        st.write(
+            "เลือกจุดที่กำลังนั่ง ระบบจะแนะนำ Wi-Fi จากค่าที่วัดได้ ณ จุดนั้น"
+            if language == "ไทย"
+            else
+            "Select where you are sitting. The advisor recommends Wi-Fi from measurements at that point."
+        )
+
+        advisor_points = sorted(
+            wifi["Point"].dropna().astype(str).unique().tolist()
+        )
+
+        if advisor_points:
+            selected_point = st.selectbox(
+                "📍 เลือกจุดที่กำลังนั่ง"
+                if language == "ไทย"
+                else "📍 Select your survey point",
+                advisor_points,
+                key=f"advisor_point_{selected_room}"
+            )
+
+            point_best, point_table = recommend_wifi_at_point(
+                wifi,
+                selected_point
+            )
+
+            if point_best is not None:
+                point_ssid = str(point_best["SSID"])
+                point_rssi = float(point_best["RSSI"])
+                status, description = signal_quality(point_rssi, language)
+
+                st.markdown(
+                    f"""
+                    <div class="recommend-card">
+                        <div class="recommend-label">📍 {display_room} • {selected_point}</div>
+                        <div class="recommend-wifi">📶 {point_ssid}</div>
+                        <div class="recommend-rssi">{point_rssi:.1f} dBm • {status}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+                st.info(description)
+
+                st.markdown(
+                    f"### 📊 {'Wi-Fi ที่ตรวจพบ ณ จุด' if language == 'ไทย' else 'Wi-Fi detected at'} {selected_point}"
+                )
+                show_point_table = point_table.copy()
+                show_point_table["RSSI"] = show_point_table["RSSI"].round(1)
+                st.dataframe(
+                    show_point_table,
+                    use_container_width=True,
+                    hide_index=True
+                )
+        else:
+            st.info(
+                "ไม่พบจุด Survey"
+                if language == "ไทย"
+                else "No survey points found."
+            )
+
+    # ========================================================
+    # 3D HEATMAP
+    # ========================================================
+
+    with tab_map:
+
+        if selected_room == "Room A":
+            st.subheader("🏠 3D Wi-Fi RSSI Heatmap — Room A (A1–A4)")
+
+            room_a_fig = create_room_a_combined_heatmap(
+                wifi=wifi,
+                opacity=opacity,
+                show_ap=show_ap,
+                show_points=show_points,
+                show_furniture=show_furniture
+            )
+
+            room_a_fig = force_white_3d(room_a_fig)
+            st.plotly_chart(room_a_fig,
+                use_container_width=True,
+                key="room_a_complete_heatmap"
+            , theme=None)
+
+            st.success(
+                f"โหลดข้อมูล Room A แล้ว: {wifi['Point'].nunique()} จุดสำรวจ • "
+                f"{wifi['SSID'].nunique()} SSID • {len(wifi)} records"
+                if language == "ไทย"
+                else
+                f"Room A loaded: {wifi['Point'].nunique()} survey points • "
+                f"{wifi['SSID'].nunique()} SSIDs • {len(wifi)} records"
+            )
+
+        else:
+            st.subheader(
+                f"3D Wi-Fi RSSI Heatmap — {display_room}"
+            )
+
+            if selected_room == "Room C":
+                fig = create_room_c_heatmap(
+                    wifi=wifi,
+                    opacity=opacity,
+                    show_points=show_points,
+                    show_furniture=show_furniture
+                )
+            elif selected_room == "Room B":
+                fig = create_room_b_heatmap(
+                    wifi=wifi,
+                    opacity=opacity,
+                    show_ap=show_ap,
+                    show_points=show_points,
+                    show_furniture=show_furniture
+                )
+            else:
+                fig = create_3d_heatmap(
+                    wifi=wifi,
+                    room_name=selected_room,
+                    room_x=ROOM_X,
+                    room_y=ROOM_Y,
+                    opacity=opacity,
+                    show_ap=show_ap,
+                    show_points=show_points,
+                    show_furniture=show_furniture
+                )
+
+            fig = force_white_3d(fig)
+            st.plotly_chart(fig,
+                use_container_width=True
+            , theme=None)
+
+        # ----------------------------------------------------
+        # Room Information
+        # ----------------------------------------------------
+
+        info_col1, info_col2, info_col3 = st.columns(3)
+
+        info_col1.info(
+            f"📐 {t['room_size']}\n\n"
+            f"{ROOM_X:.2f} × {ROOM_Y:.2f} m"
+        )
+
+        info_col2.info(
+            f"📍 {t['survey_points']}\n\n"
+            f"{wifi['Point'].nunique()}"
+        )
+
+        info_col3.info(
+            f"📡 Access Points\n\n"
+            f"{wifi['BSSID'].nunique()} AP"
+        )
+
+    # ========================================================
+    # DATA ANALYSIS
+    # ========================================================
+
+    with tab_analysis:
+
+        st.subheader(
+            "การวิเคราะห์ข้อมูลเชิงลึก (Deep Analysis)"
+        )
+
+        # ----------------------------------------------------
+        # Strongest AP
+        # ----------------------------------------------------
+
+        strongest_idx = (
+            wifi["RSSI"]
+            .idxmax()
+        )
+
+        strongest = (
+            wifi.loc[
+                strongest_idx
+            ]
+        )
+
+        channel_value = (
+            strongest["Channel"]
+            if "Channel" in wifi.columns
+            else "N/A"
+        )
+
+        st.success(
+            f"""
+🏆 **Strongest Access Point:** {strongest["SSID"]}
+
+**BSSID:** {strongest["BSSID"]}
+
+**RSSI:** {strongest["RSSI"]} dBm
+
+**พบที่จุด:** {strongest["Point"]}
+
+**ตำแหน่ง:** 
+({strongest["X"]:.2f}, {strongest["Y"]:.2f}) m
+
+**Channel:** {channel_value}
+"""
+        )
+
+        # ----------------------------------------------------
+        # Weakest AP
+        # ----------------------------------------------------
+
+        weakest_idx = (
+            wifi["RSSI"]
+            .idxmin()
+        )
+
+        weakest = (
+            wifi.loc[
+                weakest_idx
+            ]
+        )
+
+        weakest_channel = (
+            weakest["Channel"]
+            if "Channel" in wifi.columns
+            else "N/A"
+        )
+
+        st.warning(
+            f"""
+📉 **Weakest Access Point:** {weakest["SSID"]}
+
+**BSSID:** {weakest["BSSID"]}
+
+**RSSI:** {weakest["RSSI"]} dBm
+
+**พบที่จุด:** {weakest["Point"]}
+
+**ตำแหน่ง:** 
+({weakest["X"]:.2f}, {weakest["Y"]:.2f}) m
+
+**Channel:** {weakest_channel}
+"""
+        )
+
+        # ====================================================
+        # TWO COLUMNS
+        # ====================================================
+
+        col_a, col_b = st.columns(2)
+
+        # ----------------------------------------------------
+        # AP COUNT
+        # ----------------------------------------------------
+
+        with col_a:
+
+            st.markdown(
+                "**📍 จำนวน Access Point ที่พบในแต่ละจุด**"
+            )
+
+            ap_counts = (
+                wifi
+                .groupby("Point")["BSSID"]
+                .nunique()
+                .reset_index()
+            )
+
+            ap_counts.columns = [
+                "Point",
+                "AP Count"
+            ]
+
+            fig_ap = px.bar(
+
+                ap_counts,
+
+                x="Point",
+
+                y="AP Count",
+
+                text="AP Count",
+
+                color="AP Count",
+
+                color_continuous_scale="Greens"
+            )
+
+            fig_ap.update_layout(
+                xaxis_tickangle=-45,
+                margin=dict(
+                    l=0,
+                    r=0,
+                    t=30,
+                    b=0
+                )
+            )
+
+            st.plotly_chart(
+                fig_ap,
+                use_container_width=True
+            )
+
+        # ----------------------------------------------------
+        # CHANNEL
+        # ----------------------------------------------------
+
+        with col_b:
+
+            st.markdown(
+                "**📡 การกระจายตัวของการใช้ Channel**"
+            )
+
+            if "Channel" in wifi.columns:
+
+                channel_counts = (
+                    wifi["Channel"]
+                    .value_counts()
+                    .reset_index()
+                )
+
+                channel_counts.columns = [
+                    "Channel",
+                    "Count"
+                ]
+
+                channel_counts[
+                    "Channel"
+                ] = channel_counts[
+                    "Channel"
+                ].astype(str)
+
+                fig_ch = px.pie(
+
+                    channel_counts,
+
+                    names="Channel",
+
+                    values="Count",
+
+                    hole=0.4,
+
+                    color_discrete_sequence=(
+                        px.colors.qualitative.Pastel
+                    )
+                )
+
+                fig_ch.update_traces(
+                    textposition="inside",
+                    textinfo="percent+label"
+                )
+
+                fig_ch.update_layout(
+                    margin=dict(
+                        l=0,
+                        r=0,
+                        t=30,
+                        b=0
+                    )
+                )
+
+                st.plotly_chart(
+                    fig_ch,
+                    use_container_width=True
+                )
+
+            else:
+
+                st.info(
+                    "ไม่พบข้อมูล Channel"
+                )
+
+        # ====================================================
+        # RSSI DISTRIBUTION
+        # ====================================================
+
+        st.markdown(
+            "**📶 การกระจายตัวของคุณภาพสัญญาณ (RSSI Distribution)**"
+        )
+
+        fig_rssi = px.histogram(
+
+            wifi,
+
+            x="RSSI",
+
+            nbins=20,
+
+            color="SSID",
+
+            marginal="box",
+
+            color_discrete_sequence=(
+                px.colors.qualitative.Set1
+            )
+        )
+
+        fig_rssi.update_layout(
+
+            xaxis_title=(
+                "ความแรงสัญญาณ RSSI (dBm)"
+            ),
+
+            yaxis_title=(
+                "ความถี่ที่ตรวจพบ (จุด)"
+            ),
+
+            margin=dict(
+                l=0,
+                r=0,
+                t=10,
+                b=0
+            )
+        )
+
+        st.plotly_chart(
+            fig_rssi,
+            use_container_width=True
+        )
+
+        # ====================================================
+        # RSSI BY SSID
+        # ====================================================
+
+        st.markdown(
+            "**📡 ค่า RSSI เฉลี่ยของแต่ละ SSID**"
+        )
+
+        rssi_by_ssid = (
+            wifi
+            .groupby("SSID")["RSSI"]
+            .agg(
+                [
+                    "mean",
+                    "min",
+                    "max",
+                    "count"
+                ]
+            )
+            .reset_index()
+        )
+
+        rssi_by_ssid.columns = [
+            "SSID",
+            "Average RSSI",
+            "Minimum RSSI",
+            "Maximum RSSI",
+            "Measurements"
+        ]
+
+        st.dataframe(
+            rssi_by_ssid.round(1),
+            use_container_width=True,
+            hide_index=True
+        )
+
+    # ========================================================
+    # RAW DATA
+    # ========================================================
+
+    with tab_raw:
+
+        st.subheader(
+            "📋 ข้อมูลการสำรวจดิบ (Raw Survey Data)"
+        )
+
+        st.dataframe(
+            wifi,
+            use_container_width=True,
+            hide_index=True
+        )
+
+        # ----------------------------------------------------
+        # Download CSV
+        # ----------------------------------------------------
+
+        csv_data = wifi.to_csv(
+            index=False
+        ).encode("utf-8-sig")
+
+        st.download_button(
+
+            label="⬇️ ดาวน์โหลดข้อมูล CSV",
+
+            data=csv_data,
+
+            file_name=(
+                f"{selected_room}_survey_data.csv"
+            ),
+
+            mime="text/csv"
+        )
+
+else:
+
+    st.warning(
+        "⚠️ ไม่พบข้อมูลจาก SSID ที่เลือก"
+    )
+
+
+# ============================================================
+# FOOTER
+# ============================================================
+
+st.markdown(
+    "────────────────────────────────────────────"
+)
+
+st.caption(
+    f"ระบบสำรวจและวิเคราะห์คุณภาพเครือข่ายไร้สายแบบพกพา | "
+    f"{selected_room} | "
+    f"{ROOM_X:.2f} × {ROOM_Y:.2f} m"
+)
