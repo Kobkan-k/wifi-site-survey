@@ -7,10 +7,18 @@ import plotly.express as px
 from scipy.interpolate import griddata
 
 # ============================================================
+# CONSTANTS & GLOBAL COLORBAR SETTINGS (-85 to -55 dBm)
+# ============================================================
+APP_BUILD = "ALL-3D-WHITE-v6-2026-11-09"
+
+RSSI_MIN = -85.0
+RSSI_MAX = -55.0
+COLORSCALE_NAME = "Jet"
+TICK_VALS = [-85, -80, -75, -70, -65, -60, -55]
+
+# ============================================================
 # FORCE ALL PLOTLY 3D CHARTS TO LIGHT / WHITE
 # ============================================================
-APP_BUILD = "ALL-3D-WHITE-v5-2026-09-24"
-
 def force_white_3d(fig):
     """Remove dark Plotly/Streamlit styling from every 3D scene."""
     axis_style = dict(
@@ -237,7 +245,7 @@ def get_room_size(df, room_name):
 
 
 # ============================================================
-# ROOM B 3D HEATMAP
+# ROOM B 3D HEATMAP (เกณฑ์เท่ากัน: -85 ถึง -55 dBm)
 # ============================================================
 def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, show_furniture=True):
     RX, RY, WH = 6.80, 9.00, 3.0
@@ -256,13 +264,18 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
             GZ = griddata((d["X"], d["Y"]), d["RSSI"], (GX, GY), method="nearest")
         nearest = griddata((d["X"], d["Y"]), d["RSSI"], (GX, GY), method="nearest")
         GZ = np.where(np.isnan(GZ), nearest, GZ)
-        GZ = np.clip(GZ, float(d["RSSI"].min()), float(d["RSSI"].max()))
+        GZ = np.clip(GZ, RSSI_MIN, RSSI_MAX)
 
         fig.add_trace(go.Surface(
             x=GX, y=GY, z=np.zeros_like(GZ)+0.01,
-            surfacecolor=GZ, colorscale="Jet",
-            cmin=float(d["RSSI"].min()), cmax=float(d["RSSI"].max()), opacity=opacity, showscale=True,
-            colorbar=dict(title="RSSI (dBm)", len=0.65),
+            surfacecolor=GZ, colorscale=COLORSCALE_NAME,
+            cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=opacity, showscale=True,
+            colorbar=dict(
+                title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")),
+                tickvals=TICK_VALS,
+                tickfont=dict(color="#111827"),
+                len=0.75, thickness=20, outlinewidth=0, x=1.02
+            ),
             customdata=GZ,
             hovertemplate="<b>Wi-Fi Signal</b><br>X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata:.1f} dBm<extra></extra>",
             name="RSSI Heatmap"
@@ -360,7 +373,7 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
 
 
 # ============================================================
-# ROOM C 3D HEATMAP
+# ROOM C 3D HEATMAP (เกณฑ์เท่ากัน: -85 ถึง -55 dBm)
 # ============================================================
 def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=True):
     ROOM_X, ROOM_Y = 2.70, 9.00
@@ -395,7 +408,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 
     real_data = {"X": [0.00, 1.35, 2.70, 0.00, 1.35, 2.70, 0.00, 1.35, 2.70],
                  "Y": [0.00, 0.00, 0.00, 4.50, 4.50, 4.50, 9.00, 9.00, 9.00],
-                 "RSSI": [-82, -90, -84, -77, -67, -58, -77, -84, -75]}
+                 "RSSI": [-82, -85, -84, -77, -67, -58, -77, -84, -75]}
     if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
         m = wifi.dropna(subset=["X", "Y", "RSSI"])
         real_data = {k: m[k].to_numpy() for k in ("X", "Y", "RSSI")}
@@ -407,11 +420,17 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
     except:
         GZ = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method="nearest")
     GZ = np.where(np.isnan(GZ), griddata((x_vals, y_vals), rssi_vals, (GX, GY), method="nearest"), GZ)
+    GZ = np.clip(GZ, RSSI_MIN, RSSI_MAX)
 
     fig.add_trace(go.Surface(
-        x=GX, y=GY, z=np.full_like(GZ, 0.1), surfacecolor=GZ, colorscale="Jet",
-        cmin=float(np.min(rssi_vals)), cmax=float(np.max(rssi_vals)), opacity=opacity, showscale=True,
-        colorbar=dict(title=dict(text="RSSI (dBm)", font=dict(color="#111827", size=13)), tickfont=dict(color="#111827", size=11), x=1.02),
+        x=GX, y=GY, z=np.full_like(GZ, 0.1), surfacecolor=GZ, colorscale=COLORSCALE_NAME,
+        cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=opacity, showscale=True,
+        colorbar=dict(
+            title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")),
+            tickvals=TICK_VALS,
+            tickfont=dict(color="#111827"),
+            len=0.75, thickness=20, outlinewidth=0, x=1.02
+        ),
         name="Heatmap", hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<extra></extra>"
     ))
 
@@ -459,7 +478,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 
 
 # ============================================================
-# GENERAL 3D HEATMAP (สำหรับห้องย่อยอื่นๆ)
+# GENERAL 3D HEATMAP (สำหรับห้องย่อย Room 1 - Room 4 เกณฑ์เท่ากัน)
 # ============================================================
 def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_points, show_furniture):
     heatmap_data = wifi.groupby(["X", "Y"])["RSSI"].max().reset_index()
@@ -481,12 +500,17 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
     if GZ is None: GZ = nearest
     else: GZ = np.where(np.isnan(GZ), nearest, GZ)
 
-    GZ = np.clip(GZ, -90, -50)
+    GZ = np.clip(GZ, RSSI_MIN, RSSI_MAX)
     fig = go.Figure()
 
     fig.add_trace(go.Surface(
-        x=GX, y=GY, z=np.zeros_like(GZ) + 0.01, surfacecolor=GZ, colorscale="Jet", cmin=-90, cmax=-50, opacity=opacity, showscale=True,
-        colorbar=dict(title=dict(text="<b>RSSI</b><br>(dBm)"), tickvals=[-90, -73, -65, -50], ticktext=["-90 (Weak)", "-73", "-65", "-50 (Strong)"], len=0.75, thickness=20, outlinewidth=0),
+        x=GX, y=GY, z=np.zeros_like(GZ) + 0.01, surfacecolor=GZ, colorscale=COLORSCALE_NAME, cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=opacity, showscale=True,
+        colorbar=dict(
+            title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")),
+            tickvals=TICK_VALS,
+            tickfont=dict(color="#111827"),
+            len=0.75, thickness=20, outlinewidth=0, x=1.02
+        ),
         customdata=GZ, hovertemplate="<b>Wi-Fi Signal</b><br>X : %{x:.2f} m<br>Y : %{y:.2f} m<br>RSSI : %{customdata:.1f} dBm<extra></extra>", name="RSSI Heatmap"
     ))
 
@@ -523,7 +547,7 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
 
 
 # ============================================================
-# ROOM A — COMBINED 3D HEATMAP (A1-A4)
+# ROOM A — COMBINED 3D HEATMAP (ภาพรวม Room A เกณฑ์เท่ากัน)
 # ============================================================
 ROOM_A_LAYOUT = {
     "A1": {"room_key": "Room 1", "x_min": 0.0,   "x_max": 3.535, "y_min": 4.20, "y_max": 8.33},
@@ -574,7 +598,6 @@ def load_room_a_combined_data():
 
 
 def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_points=True, show_furniture=True):
-    """Room A: Heatmap สี Jet (น้ำเงิน-ฟ้า-เขียว-เหลือง-ส้ม-แดง) และลบ AP ออกจากรูป 3D ของห้อง A รวมนี้เท่านั้น"""
     ROOM_X, ROOM_Y = 7.20, 8.40
     WALL_HEIGHT, WALL_THICKNESS = 3.0, 0.12
     WALL_COLOR = '#93C5FD'
@@ -584,7 +607,6 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     ROOM_FONT_SIZE, ROOM_FONT_COLOR = 16, '#4B5563'
     POINT_HEIGHT, TEXT_HEIGHT = 0.15, 0.28
     
-    HEATMAP_COLORSCALE = 'Jet' 
     HEATMAP_OPACITY, HEATMAP_RESOLUTION = opacity, 80
 
     ROOMS_CONFIG = {
@@ -613,7 +635,6 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
             ROOM_DATA[r]['Y'].append(y)
             ROOM_DATA[r]['RSSI'].append(rssi)
 
-    RSSI_MIN, RSSI_MAX = -85.0, -55.0
     fig = go.Figure()
 
     # Floors
@@ -689,17 +710,18 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         except: GZ = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
         nearest = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
         GZ = np.where(np.isnan(GZ), nearest, GZ)
+        GZ = np.clip(GZ, RSSI_MIN, RSSI_MAX)
         
         Z_PLANE = np.full_like(GZ, 0.20)
 
         fig.add_trace(go.Surface(
             x=GX, y=GY, z=Z_PLANE,
-            surfacecolor=GZ, colorscale=HEATMAP_COLORSCALE,
+            surfacecolor=GZ, colorscale=COLORSCALE_NAME,
             cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=HEATMAP_OPACITY,
             showscale=(room_name == '1'), 
             colorbar=dict(
                 title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")), 
-                tickvals=[-85, -80, -75, -70, -65, -60, -55], 
+                tickvals=TICK_VALS, 
                 tickfont=dict(color="#111827"), 
                 len=0.75, thickness=20, outlinewidth=0, x=1.02
             ) if room_name == '1' else None,
@@ -794,8 +816,6 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         add_table('Table 1 (Room 4)',center_x4,center_y4+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
         add_table('Table 2 (Room 4)',center_x4,center_y4-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
         add_sliding_door('Sliding Door (Room 4)',x=3.535-(WALL_THICKNESS/2+0.01),y=1.86,length=0.97,t=0.04,h=2.06,orientation='vertical')
-
-    # ลบ Access Point ออกจากภาพรวม Room A 3D เท่านั้น
 
     fig.update_layout(
         title=dict(text='3D Wi-Fi RSSI Heatmap | KMITL Co-Working Space (Room A Combined)',x=0.5,font=dict(size=22,color='#111827',family=FONT_FAMILY)),
