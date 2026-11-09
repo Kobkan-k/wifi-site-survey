@@ -795,9 +795,10 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
     )
 
     if not show_points:
-        fig.data = tuple(t for t in fig.data if t.name not in ("Survey Points", "RSSI Labels"))
+        fig.data = tuple(t for t in fig.data if not ((getattr(t, 'name', '') or '').startswith(('Survey Points Room', 'Point Labels Room'))))
     if not show_furniture:
-        fig.data = tuple(t for t in fig.data if t.type == "surface" or t.name in ("Room Main Floor", "Survey Points", "RSSI Labels"))
+        fig.data = tuple(t for t in fig.data if not ((getattr(t, 'name', '') or '').startswith(('Table ', 'Cabinet ', 'Sliding Door', 'Left Swing Door', 'Right Swing Door'))))
+
     return fig
 
 
@@ -1996,6 +1997,50 @@ if not wifi.empty:
         )
 
     # ========================================================
+    # 3D MAP TAB (รองรับห้องย่อย A1-A4)
+    # ========================================================
+    with tab_map:
+        st.subheader(t["map"] + f" - {display_room}")
+        
+        with st.spinner("กำลังสร้าง 3D Heatmap..." if language == "ไทย" else "Generating 3D Heatmap..."):
+            
+            # 1. กรณีเป็นภาพรวม Room A (A1-A4 รวมกัน)
+            if selected_room == "Room A":
+                fig = create_room_a_combined_heatmap(
+                    wifi, opacity, show_ap, show_points, show_furniture
+                )
+                
+            # 2. กรณีเป็น Room B
+            elif selected_room == "Room B":
+                fig = create_room_b_heatmap(
+                    wifi, opacity, show_ap, show_points, show_furniture
+                )
+                
+            # 3. กรณีเป็น Room C
+            elif selected_room == "Room C":
+                fig = create_room_c_heatmap(
+                    wifi, opacity, show_points, show_furniture
+                )
+                
+            # 4. กรณีเป็นห้องย่อยของ Room A (A1, A2, A3, A4)
+            elif selected_room in ["Room 1", "Room 2", "Room 3", "Room 4"]:
+                fig = create_3d_heatmap(
+                    wifi, selected_room, ROOM_X, ROOM_Y, 
+                    opacity, show_ap, show_points, show_furniture
+                )
+                
+            # 5. กรณีอื่นๆ (Fallback)
+            else:
+                fig = create_3d_heatmap(
+                    wifi, selected_room, ROOM_X, ROOM_Y, 
+                    opacity, show_ap, show_points, show_furniture
+                )
+                
+            # บังคับใช้ธีมสว่าง
+            fig = force_white_3d(fig)
+            st.plotly_chart(fig, use_container_width=True, height=850, theme=None)
+
+    # ========================================================
     # WI-FI ADVISOR TAB
     # ========================================================
 
@@ -2059,96 +2104,13 @@ if not wifi.empty:
                 if language == "ไทย"
                 else "No survey points found."
             )
-
-    # ========================================================
-    # 3D HEATMAP
-    # ========================================================
-
-    with tab_map:
-
-        if selected_room == "Room A":
-            st.subheader("🏠 3D Wi-Fi RSSI Heatmap — Room A (A1–A4)")
-
-            room_a_fig = create_room_a_combined_heatmap(
-                wifi=wifi,
-                opacity=opacity,
-                show_ap=show_ap,
-                show_points=show_points,
-                show_furniture=show_furniture
-            )
-
-            room_a_fig = force_white_3d(room_a_fig)
-            st.plotly_chart(room_a_fig,
-                use_container_width=True,
-                key="room_a_complete_heatmap"
-            , theme=None)
-
-            st.success(
-                f"โหลดข้อมูล Room A แล้ว: {wifi['Point'].nunique()} จุดสำรวจ • "
-                f"{wifi['SSID'].nunique()} SSID • {len(wifi)} records"
-                if language == "ไทย"
-                else
-                f"Room A loaded: {wifi['Point'].nunique()} survey points • "
-                f"{wifi['SSID'].nunique()} SSIDs • {len(wifi)} records"
-            )
-
-        else:
-            st.subheader(
-                f"3D Wi-Fi RSSI Heatmap — {display_room}"
-            )
-
-            if selected_room == "Room C":
-                fig = create_room_c_heatmap(
-                    wifi=wifi,
-                    opacity=opacity,
-                    show_points=show_points,
-                    show_furniture=show_furniture
-                )
-            elif selected_room == "Room B":
-                fig = create_room_b_heatmap(
-                    wifi=wifi,
-                    opacity=opacity,
-                    show_ap=show_ap,
-                    show_points=show_points,
-                    show_furniture=show_furniture
-                )
-            else:
-                fig = create_3d_heatmap(
-                    wifi=wifi,
-                    room_name=selected_room,
-                    room_x=ROOM_X,
-                    room_y=ROOM_Y,
-                    opacity=opacity,
-                    show_ap=show_ap,
-                    show_points=show_points,
-                    show_furniture=show_furniture
-                )
-
-            fig = force_white_3d(fig)
-            st.plotly_chart(fig,
-                use_container_width=True
-            , theme=None)
-
-        # ----------------------------------------------------
-        # Room Information
-        # ----------------------------------------------------
-
-        info_col1, info_col2, info_col3 = st.columns(3)
-
-        info_col1.info(
-            f"📐 {t['room_size']}\n\n"
-            f"{ROOM_X:.2f} × {ROOM_Y:.2f} m"
-        )
-
-        info_col2.info(
-            f"📍 {t['survey_points']}\n\n"
-            f"{wifi['Point'].nunique()}"
-        )
-
-        info_col3.info(
-            f"📡 Access Points\n\n"
-            f"{wifi['BSSID'].nunique()} AP"
-        )
+            
+        if not wifi_recommendation.empty:
+            for idx, row in wifi_recommendation.iterrows():
+                with st.expander(f"{row['SSID']} - Score: {row['Score']:.1f}/100", expanded=(idx==0)):
+                    st.write(f"**Quality:** {row['Quality']}")
+                    st.write(f"**Average RSSI:** {row['Average RSSI']:.1f} dBm")
+                    st.write(f"**Strong Signal:** {row['Good Signal (%)']:.1f}%")
 
     # ========================================================
     # DATA ANALYSIS
@@ -2159,6 +2121,20 @@ if not wifi.empty:
         st.subheader(
             "การวิเคราะห์ข้อมูลเชิงลึก (Deep Analysis)"
         )
+
+        # ----------------------------------------------------
+        # กราฟแท่งเปรียบเทียบ RSSI ของแต่ละ SSID
+        # ----------------------------------------------------
+        if not wifi_recommendation.empty:
+            bar_fig = px.bar(
+                wifi_recommendation,
+                x="SSID",
+                y="Average RSSI",
+                color="Score",
+                title="Average RSSI by SSID" if language == "English" else "เปรียบเทียบ RSSI เฉลี่ยแต่ละ SSID",
+                color_continuous_scale="RdYlGn"
+            )
+            st.plotly_chart(bar_fig, use_container_width=True)
 
         # ----------------------------------------------------
         # Strongest AP
