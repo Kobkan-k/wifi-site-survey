@@ -400,16 +400,14 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         '4': {'label': 'A4', 'x_min': 3.535, 'x_max': 7.105, 'y_min': 0., 'y_max': 2.83, 'color': '#E5E7EB'},
     }
 
-    ROOM_DATA = {'1': {'X':[],'Y':[],'RSSI':[]}, '2': {'X':[],'Y':[],'RSSI':[]}, '3': {'X':[],'Y':[],'RSSI':[]}, '4': {'X':[],'Y':[],'RSSI':[]}}
-    
+    ROOM_DATA = {}
     if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
-        for _, row in wifi.dropna(subset=["X", "Y", "RSSI"]).iterrows():
-            x, y, rssi = float(row['X']), float(row['Y']), float(row['RSSI'])
-            if x <= 3.535 and y >= 4.20: r = '1'
-            elif x > 3.535 and y >= 2.83: r = '2'
-            elif x <= 3.535 and y < 4.20: r = '3'
-            else: r = '4'
-            ROOM_DATA[r]['X'].append(x); ROOM_DATA[r]['Y'].append(y); ROOM_DATA[r]['RSSI'].append(rssi)
+        # ใช้ Pandas กรองข้อมูลรวดเดียว
+        w = wifi.dropna(subset=["X", "Y", "RSSI"])
+        ROOM_DATA['1'] = w[(w['X'] >= 0) & (w['X'] <= 3.535) & (w['Y'] >= 4.20) & (w['Y'] <= 8.33)]
+        ROOM_DATA['2'] = w[(w['X'] > 3.535) & (w['X'] <= 7.105) & (w['Y'] >= 2.83) & (w['Y'] <= 8.30)]
+        ROOM_DATA['3'] = w[(w['X'] >= 0) & (w['X'] <= 3.535) & (w['Y'] >= 0) & (w['Y'] <= 4.20)]
+        ROOM_DATA['4'] = w[(w['X'] > 3.535) & (w['X'] <= 7.105) & (w['Y'] >= 0) & (w['Y'] < 2.83)]
 
     fig = go.Figure()
 
@@ -432,10 +430,10 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     add_wall(3.535,2.83,7.105,2.83); add_wall(3.535,4.20,3.535,8.33); add_wall(3.535,0,3.535,1.86); add_wall(3.535,1.86,3.535,2.83,height=WALL_HEIGHT-2.06,z0=2.06)
     add_wall(3.535,2.83,3.535,3.03); add_wall(3.535,3.03+0.97,3.535,4.20); add_wall(3.535,3.03,3.535,3.03+0.97,height=WALL_HEIGHT-2.06,z0=2.06)
 
-    def add_room_heatmap(room_name, room_data):
-        if not room_data or len(room_data.get('X', [])) == 0: return
+    def add_room_heatmap(room_name, room_df):
+        if room_df is None or room_df.empty: return
         room = ROOM_CONFIGS[room_name]
-        xv, yv, rv = np.asarray(room_data['X']), np.asarray(room_data['Y']), np.asarray(room_data['RSSI'])
+        xv, yv, rv = room_df['X'].values, room_df['Y'].values, room_df['RSSI'].values
         GX, GY = np.meshgrid(np.linspace(room['x_min'], room['x_max'], 80), np.linspace(room['y_min'], room['y_max'], 80))
         
         GZ = safe_interpolate(xv, yv, rv, GX, GY)
@@ -443,10 +441,10 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         if show_points:
             fig.add_trace(go.Scatter3d(x=xv,y=yv,z=np.full(len(xv),0.25),mode='markers',marker=dict(size=4,color='#1F2937',line=dict(width=1,color='white'))))
 
-    add_room_heatmap('1', ROOM_DATA.get('1', {}))
-    add_room_heatmap('2', ROOM_DATA.get('2', {}))
-    add_room_heatmap('3', ROOM_DATA.get('3', {}))
-    add_room_heatmap('4', ROOM_DATA.get('4', {}))
+    add_room_heatmap('1', ROOM_DATA.get('1'))
+    add_room_heatmap('2', ROOM_DATA.get('2'))
+    add_room_heatmap('3', ROOM_DATA.get('3'))
+    add_room_heatmap('4', ROOM_DATA.get('4'))
 
     fig.update_layout(title=dict(text='3D Wi-Fi RSSI Heatmap',x=0.5), paper_bgcolor='#FFFFFF',plot_bgcolor='#FFFFFF', scene=dict(xaxis=dict(range=[-0.5,ROOM_X+0.5]), yaxis=dict(range=[-0.5,ROOM_Y+0.5]), zaxis=dict(range=[0,3.5]), aspectmode='manual',aspectratio=dict(x=7.2,y=8.4,z=3.5)), height=850,margin=dict(l=0,r=0,t=70,b=0))
     return fig
