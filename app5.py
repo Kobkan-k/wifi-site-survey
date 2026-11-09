@@ -5,7 +5,7 @@ import pandas as pd
 from scipy.interpolate import griddata
 
 def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_points=True, show_furniture=True):
-    """Room A updated from the supplied four-subroom 3D model."""
+    """Room A updated: Heatmap สีน้ำเงิน-แดง และซ่อน AP ออกจากรูป 3D นี้เท่านั้น"""
     ROOM_X, ROOM_Y = 7.20, 8.40
     WALL_HEIGHT, WALL_THICKNESS = 3.0, 0.12
     WALL_COLOR = '#93C5FD'
@@ -15,8 +15,8 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     ROOM_FONT_SIZE, ROOM_FONT_COLOR = 16, '#4B5563'
     POINT_HEIGHT, TEXT_HEIGHT = 0.15, 0.28
     
-    # เปลี่ยน Colorscale เป็นแบบเดียวกับห้องใหญ่ (แดง -> เขียว)
-    HEATMAP_COLORSCALE = [[0.000, "#ef4444"], [0.375, "#f97316"], [0.625, "#eab308"], [1.000, "#22c55e"]]
+    # โทนสี น้ำเงิน -> แดง แบบเดียวกับห้อง A เดิม
+    HEATMAP_COLORSCALE = 'Jet' 
     HEATMAP_OPACITY, HEATMAP_RESOLUTION = opacity, 80
 
     ROOMS_CONFIG = {
@@ -33,7 +33,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     
     ROOM_DATA = {'1':room_a_data,'2':room_b_data,'3':room_c_data,'4':room_d_data}
 
-    # Override with dataframe if passed from Streamlit UI
+    # อัปเดตข้อมูลหากมีการอัปโหลดไฟล์
     if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
         for k in ROOM_DATA.keys():
             ROOM_DATA[k] = {'X': [], 'Y': [], 'RSSI': []}
@@ -48,8 +48,8 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
             ROOM_DATA[r]['Y'].append(y)
             ROOM_DATA[r]['RSSI'].append(rssi)
 
-    # ฟิกซ์ค่าช่วงสี (Color limit) ให้เท่ากับห้องใหญ่เสมอ เพื่อความเป็นมาตรฐาน
-    RSSI_MIN, RSSI_MAX = -90.0, -50.0
+    # กำหนดขีดจำกัดสี (Color scale limits) ให้เหมือนห้อง A เดิม
+    RSSI_MIN, RSSI_MAX = -85.0, -55.0
 
     fig = go.Figure()
 
@@ -143,21 +143,16 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         nearest = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
         GZ = np.where(np.isnan(GZ), nearest, GZ)
         
-        # ตัดค่า GZ ให้อยู่ในช่วง -90 ถึง -50 เหมือนห้องใหญ่
-        GZ = np.clip(GZ, -90, -50)
-        
-        # ยก Z ขึ้นเป็น 0.20 ให้เห็นชัดเจน
         Z_PLANE = np.full_like(GZ, 0.20)
 
         fig.add_trace(go.Surface(
             x=GX, y=GY, z=Z_PLANE,
             surfacecolor=GZ, colorscale=HEATMAP_COLORSCALE,
-            cmin=-90, cmax=-50, opacity=HEATMAP_OPACITY,
+            cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=HEATMAP_OPACITY,
             showscale=(room_name == '1'), 
             colorbar=dict(
                 title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")), 
-                tickvals=[-90, -73, -65, -50], 
-                ticktext=["-90 (Weak)", "-73", "-65", "-50 (Strong)"], 
+                tickvals=[-85, -80, -75, -70, -65, -60, -55], 
                 tickfont=dict(color="#111827"), 
                 len=0.75, thickness=20, outlinewidth=0, x=1.02
             ) if room_name == '1' else None,
@@ -278,6 +273,8 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         DOOR_4_X=3.535-(WALL_THICKNESS/2+0.01)
         add_sliding_door('Sliding Door (Room 4)',x=DOOR_4_X,y=1.86,length=0.97,t=0.04,h=2.06,orientation='vertical')
 
+    # ไม่มีการสร้างรูป Access Point (AP) ในฟังก์ชันนี้ตามที่ต้องการ
+
     fig.update_layout(
         title=dict(text='3D Wi-Fi RSSI Heatmap | KMITL Co-Working Space (Room A Combined)',x=0.5,font=dict(size=22,color='#111827',family=FONT_FAMILY)),
         paper_bgcolor='#FFFFFF',plot_bgcolor='#FFFFFF',font=dict(family=FONT_FAMILY,color='#111827'),
@@ -303,15 +300,18 @@ def main():
     st.title("📡 3D Wi-Fi RSSI Heatmap | KMITL Co-Working Space")
     
     st.sidebar.header("🛠️ การแสดงผล (Display Options)")
+    
+    # ตัวเลือกให้ผู้ใช้ปรับตั้งค่าจาก Sidebar
     opacity = st.sidebar.slider("ความโปร่งใส Heatmap (Opacity)", 0.0, 1.0, 0.85)
     show_points = st.sidebar.checkbox("แสดงจุดสำรวจสัญญาณ (Survey Points)", True)
     show_furniture = st.sidebar.checkbox("แสดงเฟอร์นิเจอร์ (Furniture)", True)
+    show_ap = st.sidebar.checkbox("แสดง Access Point (AP)", True) # คงปุ่มนี้ไว้เผื่อคุณมีห้องอื่นๆ ในระบบ
     
-    # วาดกราฟ
+    # แสดงกราฟของห้อง A แบบรวม
     fig = create_room_a_combined_heatmap(
         wifi=None, 
         opacity=opacity, 
-        show_ap=False, 
+        show_ap=show_ap, # ส่งค่าเข้าไป แต่จะไม่เกิดผลลัพธ์ในรูป 3D ของห้อง A แล้ว
         show_points=show_points, 
         show_furniture=show_furniture
     )
