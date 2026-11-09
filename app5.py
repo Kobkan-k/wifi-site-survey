@@ -1436,11 +1436,18 @@ with st.sidebar:
     ]["file"]
 
     if selected_area == "Room A":
-        st.caption(
-            "อัปโหลดไฟล์ของ Room A (A1-A4 รวมกัน) ที่นี่"
-            if language == "ไทย"
-            else "Upload combined Room A (A1-A4) data here"
-        )
+        if selected_room == "Room A":
+            st.caption(
+                "อัปโหลดไฟล์รวม Room A (A1-A4) เพื่อดูภาพรวม"
+                if language == "ไทย"
+                else "Upload combined Room A (A1-A4) data for overview"
+            )
+        else:
+             st.caption(
+                f"อัปโหลดไฟล์สำหรับห้องย่อย {selected_room} เพื่อดูเฉพาะจุด"
+                if language == "ไทย"
+                else f"Upload data for subroom {selected_room} for specific view"
+            )
     else:
         st.caption(
             f"{t['default_file']}: `{default_filename}`"
@@ -1452,7 +1459,7 @@ with st.sidebar:
             "csv",
             "xlsx"
         ],
-        key=f"upload_{selected_area}"
+        key=f"upload_{selected_room}"
     )
 
 
@@ -1462,35 +1469,30 @@ with st.sidebar:
 
 if uploaded_file is not None:
     uploaded_df = load_data(uploaded_file)
-    if selected_area == "Room A":
-        if selected_room == "Room A":
-            df = uploaded_df
-        elif selected_room in ["Room 1", "Room 2", "Room 3", "Room 4"]:
-            # กรองข้อมูลจากไฟล์รวม Room A ให้เหลือเฉพาะของห้องย่อยนั้น
-            layout = next((v for v in ROOM_A_LAYOUT.values() if v["room_key"] == selected_room), None)
-            if layout:
-                mask = (
-                    (uploaded_df["X"] >= layout["x_min"]) & (uploaded_df["X"] <= layout["x_max"]) &
-                    (uploaded_df["Y"] >= layout["y_min"]) & (uploaded_df["Y"] <= layout["y_max"])
-                )
-                df = uploaded_df[mask].copy()
-                # ขยับพิกัด X, Y ให้กลับไปเริ่มที่ (0, 0) สำหรับการแสดง 3D ในห้องย่อย
-                df["X"] = df["X"] - layout["x_min"]
-                df["Y"] = df["Y"] - layout["y_min"]
-            else:
-                df = uploaded_df
-    elif selected_room == "Room B":
+    if selected_room == "Room B":
         base_df = load_room_b_embedded()
         df = pd.concat([base_df, uploaded_df], ignore_index=True)
         df = df.drop_duplicates(subset=["Point", "SSID", "BSSID"], keep="last")
     else:
         df = uploaded_df
 
-elif selected_area == "Room A":
-    if selected_room == "Room A":
-        df = load_room_a_combined_data()
-    else:
-        df = _load_room_a_csv(selected_room)
+elif selected_room == "Room A":
+
+    # ภาพรวม Room A: รวมข้อมูล A1-A4
+    df = load_room_a_combined_data()
+
+    if df is None or df.empty:
+        st.error(
+            "❌ ไม่สามารถโหลดข้อมูล Room A (A1-A4) ได้"
+            if language == "ไทย"
+            else "❌ Unable to load Room A data (A1-A4)."
+        )
+        st.stop()
+
+elif selected_room in ["Room 1", "Room 2", "Room 3", "Room 4"]:
+
+    # A1-A4: ใช้ CSV ถ้ามี และใช้ข้อมูล fallback ที่ฝังไว้ถ้าไม่มีไฟล์
+    df = _load_room_a_csv(selected_room)
 
     if df is None or df.empty:
         st.error(
