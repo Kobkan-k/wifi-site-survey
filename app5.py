@@ -267,45 +267,19 @@ def load_data(uploaded_file):
         # Clean Column Names
         # ----------------------------------------------------
 
-        df.columns = (
-            df.columns
-            .astype(str)
-            .str.strip()
-        )
-
-        # ----------------------------------------------------
-        # Rename Columns
-        # ----------------------------------------------------
-
-        rename_mapping = {
-
-            "Point ID": "Point",
-            "Point": "Point",
-
-            "X (m)": "X",
-            "X": "X",
-
-            "Y (m)": "Y",
-            "Y": "Y",
-
-            "RSSI (dBm)": "RSSI",
-            "RSSI_dBm": "RSSI",
-            "RSSI": "RSSI",
-
-            "Frequency (MHz)": "Frequency",
-            "Frequency": "Frequency",
-
-            "Channel": "Channel",
-            "channel": "Channel",
-
-            "SSID": "SSID",
-            "BSSID": "BSSID",
-
-            "Band": "Band"
+        # Normalize headers and accept common capitalization variants.
+        df.columns = df.columns.astype(str).str.strip()
+        header_aliases = {
+            "point id": "Point", "point": "Point",
+            "x (m)": "X", "x": "X",
+            "y (m)": "Y", "y": "Y",
+            "rssi (dbm)": "RSSI", "rssi_dbm": "RSSI", "rssi": "RSSI",
+            "frequency (mhz)": "Frequency", "frequency": "Frequency",
+            "channel": "Channel", "ssid": "SSID", "bssid": "BSSID",
+            "band": "Band", "security": "Security",
         }
-
         df.rename(
-            columns=rename_mapping,
+            columns={col: header_aliases.get(col.lower(), col) for col in df.columns},
             inplace=True
         )
 
@@ -318,7 +292,6 @@ def load_data(uploaded_file):
             "X",
             "Y",
             "SSID",
-            "BSSID",
             "RSSI"
         ]
 
@@ -341,6 +314,19 @@ def load_data(uploaded_file):
             )
 
             return pd.DataFrame()
+
+        # BSSID is optional in some survey files. Use SSID as a fallback
+        # identifier when the MAC address is absent or blank.
+        if "BSSID" not in df.columns:
+            df["BSSID"] = df["SSID"].astype(str).str.strip()
+        else:
+            missing_bssid = (
+                df["BSSID"].isna()
+                | df["BSSID"].astype(str).str.strip().eq("")
+            )
+            df.loc[missing_bssid, "BSSID"] = (
+                df.loc[missing_bssid, "SSID"].astype(str).str.strip()
+            )
 
         # ----------------------------------------------------
         # Convert Numeric
@@ -1614,6 +1600,33 @@ if df is None or df.empty:
     )
 
     st.stop()
+
+# Normalize the schema for every source (uploaded, default, or embedded data).
+df.columns = df.columns.astype(str).str.strip()
+global_aliases = {
+    "point id": "Point", "point": "Point",
+    "x (m)": "X", "x": "X",
+    "y (m)": "Y", "y": "Y",
+    "rssi (dbm)": "RSSI", "rssi_dbm": "RSSI", "rssi": "RSSI",
+    "ssid": "SSID", "bssid": "BSSID", "channel": "Channel",
+    "frequency (mhz)": "Frequency", "frequency": "Frequency",
+}
+df.rename(
+    columns={col: global_aliases.get(col.lower(), col) for col in df.columns},
+    inplace=True
+)
+
+# Missing BSSID: use SSID as a fallback key, not as a real MAC address.
+if "BSSID" not in df.columns:
+    df["BSSID"] = df["SSID"].astype(str).str.strip()
+else:
+    missing_bssid = (
+        df["BSSID"].isna()
+        | df["BSSID"].astype(str).str.strip().eq("")
+    )
+    df.loc[missing_bssid, "BSSID"] = (
+        df.loc[missing_bssid, "SSID"].astype(str).str.strip()
+    )
 
 
 # ============================================================
