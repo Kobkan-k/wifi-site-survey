@@ -2613,11 +2613,9 @@ def create_room_a_combined_heatmap(opacity=0.85, show_ap=True, show_points=True,
                                    customdata=np.array(point_labels),
                                    hovertemplate='Point: %{customdata}<br>X: %{x:.2f} m<br>Y: %{y:.2f} m<extra></extra>',
                                    name=f'Survey Points Room {room_name}',showlegend=False))
-        lx,ly=place_labels(xv,yv,room)
-        fig.add_trace(go.Scatter3d(x=lx,y=ly,z=np.full(len(lx),TEXT_HEIGHT),mode='text',
-                                   text=point_labels,textposition='middle center',
-                                   textfont=dict(family=FONT_FAMILY,size=POINT_FONT_SIZE,color=POINT_FONT_COLOR),
-                                   hoverinfo='skip',name=f'Point Labels Room {room_name}',showlegend=False))
+        # Do not draw permanent point-ID text in the 3D scene.
+        # Labels overlap at close survey locations and become difficult to read.
+        # The same point IDs remain available when hovering over each marker.
 
     add_room_heatmap('1',room_a_data,1)
     add_room_heatmap('2',room_b_data,10)
