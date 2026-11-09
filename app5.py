@@ -870,7 +870,7 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
 
 
 # ============================================================
-# ROOM A — COMBINED 3D HEATMAP (UPDATED LOGIC)
+# ROOM A — COMBINED 3D HEATMAP (A1-A4)
 # ============================================================
 ROOM_A_X = 7.20
 ROOM_A_Y = 8.40
@@ -884,48 +884,67 @@ ROOM_A_LAYOUT = {
 }
 
 ROOM_A_FALLBACK_DATA = {
-    'Room 1': pd.DataFrame({'Point': ['P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P07', 'P08', 'P09'], 'X': [0.0, 1.77, 3.54, 0.0, 1.77, 3.54, 0.0, 1.77, 3.54], 'Y': [0.0, 0.0, 0.0, 2.07, 2.07, 2.07, 4.13, 4.13, 4.13], 'RSSI': [-70, -64, -68, -68, -74, -70, -77, -68, -75]}),
-    'Room 2': pd.DataFrame({'Point': ['P10', 'P11', 'P12', 'P13', 'P14', 'P15', 'P16', 'P17', 'P18', 'P19', 'P20', 'P21'], 'X': [0.0, 1.78, 3.57, 0.0, 1.78, 3.57, 0.0, 1.78, 3.57, 0.0, 1.78, 3.57], 'Y': [0.0, 0.0, 0.0, 1.82, 1.82, 1.82, 3.65, 3.65, 3.65, 5.47, 5.47, 5.47], 'RSSI': [-50, -66, -81, -85, -71, -75, -50, -70, -70, -70, -69, -71]}),
-    'Room 3': pd.DataFrame({'Point': ['P22', 'P23', 'P24', 'P25', 'P26', 'P27', 'P28', 'P29', 'P30'], 'X': [0.0, 1.77, 3.54, 0.0, 1.77, 3.54, 0.0, 1.77, 3.54], 'Y': [0.0, 0.0, 0.0, 2.1, 2.1, 2.1, 4.2, 4.2, 4.2], 'RSSI': [-74, -62, -71, -63, -69, -70, -67, -60, -64]}),
-    'Room 4': pd.DataFrame({'Point': ['P31', 'P32', 'P33', 'P34', 'P35', 'P36', 'P37', 'P38', 'P39'], 'X': [0.0, 1.78, 3.57, 0.0, 1.78, 3.57, 0.0, 1.78, 3.57], 'Y': [0.0, 0.0, 0.0, 1.41, 1.41, 1.41, 2.83, 2.83, 2.83], 'RSSI': [-73, -67, -74, -63, -66, -70, -64, -66, -75]}),
+    'Room 1': pd.DataFrame({'Point': ['P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P07', 'P08', 'P09'], 'X': [0.0, 1.77, 3.54, 0.0, 1.77, 3.54, 0.0, 1.77, 3.54], 'Y': [0.0, 0.0, 0.0, 2.07, 2.07, 2.07, 4.13, 4.13, 4.13], 'RSSI': [-70, -64, -68, -68, -74, -70, -77, -68, -75], 'SSID': ['KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI'], 'BSSID': ['Room 1', 'Room 1', 'Room 1', 'Room 1', 'Room 1', 'Room 1', 'Room 1', 'Room 1', 'Room 1']}),
+    'Room 2': pd.DataFrame({'Point': ['P10', 'P11', 'P12', 'P13', 'P14', 'P15', 'P16', 'P17', 'P18', 'P19', 'P20', 'P21'], 'X': [0.0, 1.78, 3.57, 0.0, 1.78, 3.57, 0.0, 1.78, 3.57, 0.0, 1.78, 3.57], 'Y': [0.0, 0.0, 0.0, 1.82, 1.82, 1.82, 3.65, 3.65, 3.65, 5.47, 5.47, 5.47], 'RSSI': [-50, -66, -81, -85, -71, -75, -50, -70, -70, -70, -69, -71], 'SSID': ['KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI'], 'BSSID': ['Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2', 'Room 2']}),
+    'Room 3': pd.DataFrame({'Point': ['P22', 'P23', 'P24', 'P25', 'P26', 'P27', 'P28', 'P29', 'P30'], 'X': [0.0, 1.77, 3.54, 0.0, 1.77, 3.54, 0.0, 1.77, 3.54], 'Y': [0.0, 0.0, 0.0, 2.1, 2.1, 2.1, 4.2, 4.2, 4.2], 'RSSI': [-74, -62, -71, -63, -69, -70, -67, -60, -64], 'SSID': ['KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI'], 'BSSID': ['Room 3', 'Room 3', 'Room 3', 'Room 3', 'Room 3', 'Room 3', 'Room 3', 'Room 3', 'Room 3']}),
+    'Room 4': pd.DataFrame({'Point': ['P31', 'P32', 'P33', 'P34', 'P35', 'P36', 'P37', 'P38', 'P39'], 'X': [0.0, 1.78, 3.57, 0.0, 1.78, 3.57, 0.0, 1.78, 3.57], 'Y': [0.0, 0.0, 0.0, 1.41, 1.41, 1.41, 2.83, 2.83, 2.83], 'RSSI': [-73, -67, -74, -63, -66, -70, -64, -66, -75], 'SSID': ['KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI', 'KMITL-WIFI'], 'BSSID': ['Room 4', 'Room 4', 'Room 4', 'Room 4', 'Room 4', 'Room 4', 'Room 4', 'Room 4', 'Room 4']}),
 }
 
 def _load_room_a_csv(room_key):
+    """Load A1-A4 CSV; if unavailable, use the Room A survey data supplied by the user."""
     filename = ROOMS[room_key]["file"]
     if not filename or not os.path.exists(filename):
         return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
     try:
         d = pd.read_csv(filename, skipinitialspace=True)
         d.columns = d.columns.astype(str).str.strip()
-        d.rename(columns={"Point ID": "Point", "X (m)": "X", "Y (m)": "Y", "RSSI (dBm)": "RSSI", "RSSI_dBm": "RSSI", "Frequency (MHz)": "Frequency", "channel": "Channel"}, inplace=True)
+        d.rename(columns={
+            "Point ID": "Point", "X (m)": "X", "Y (m)": "Y",
+            "RSSI (dBm)": "RSSI", "RSSI_dBm": "RSSI",
+            "Frequency (MHz)": "Frequency", "channel": "Channel"
+        }, inplace=True)
         for col in ["X", "Y", "RSSI", "Channel"]:
-            if col in d.columns: d[col] = pd.to_numeric(d[col], errors="coerce")
-        if not {"X", "Y", "RSSI"}.issubset(d.columns): return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
+            if col in d.columns:
+                d[col] = pd.to_numeric(d[col], errors="coerce")
+        required = {"X", "Y", "RSSI"}
+        if not required.issubset(d.columns):
+            return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
         return d.dropna(subset=["X", "Y", "RSSI"]).copy()
     except Exception:
         return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
 
 def load_room_a_combined_data():
+    """
+    Build one dataframe for the complete Room A (A1-A4).
+    CSV files are used when available; embedded fallback data is used otherwise.
+    Local X/Y coordinates are shifted into the 7.20 x 8.40 m Room A plan.
+    """
     frames = []
     for label, layout in ROOM_A_LAYOUT.items():
         room_key = layout["room_key"]
         d = _load_room_a_csv(room_key).copy()
         if d.empty: continue
+
         d["Local_X"] = pd.to_numeric(d["X"], errors="coerce")
         d["Local_Y"] = pd.to_numeric(d["Y"], errors="coerce")
         d["X"] = d["Local_X"] + layout["x_min"]
         d["Y"] = d["Local_Y"] + layout["y_min"]
         d["Subroom"] = label
-        if "Point" not in d.columns: d["Point"] = [f"{label}-P{i+1}" for i in range(len(d))]
-        else: d["Point"] = label + "-" + d["Point"].astype(str)
+
+        if "Point" not in d.columns:
+            d["Point"] = [f"{label}-P{i+1}" for i in range(len(d))]
+        else:
+            d["Point"] = label + "-" + d["Point"].astype(str)
+
         if "SSID" not in d.columns: d["SSID"] = "KMITL-WIFI"
         if "BSSID" not in d.columns: d["BSSID"] = label + "-AP"
+
         frames.append(d)
-    if not frames: return pd.DataFrame()
-    return pd.concat(frames, ignore_index=True)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
 def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_points=True, show_furniture=True):
+    """Room A updated from the supplied four-subroom 3D model."""
     ROOM_X, ROOM_Y = 7.20, 8.40
     WALL_HEIGHT, WALL_THICKNESS = 3.0, 0.12
     WALL_COLOR = '#93C5FD'
@@ -933,23 +952,22 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     FONT_FAMILY = 'Arial'
     POINT_FONT_SIZE, POINT_FONT_COLOR = 11, '#4B5563'
     ROOM_FONT_SIZE, ROOM_FONT_COLOR = 16, '#4B5563'
-    POINT_HEIGHT, TEXT_HEIGHT = 0.25, 0.35 
+    POINT_HEIGHT, TEXT_HEIGHT = 0.15, 0.28
     HEATMAP_COLORSCALE, HEATMAP_OPACITY, HEATMAP_RESOLUTION = 'Jet', opacity, 80
 
-    ROOM_CONFIGS = {
+    ROOMS_CONFIG = {
         '1': {'x_min': 0., 'x_max': 3.535, 'y_min': 4.20, 'y_max': 8.33, 'color': '#E5E7EB'},
         '2': {'x_min': 3.535, 'x_max': 7.105, 'y_min': 2.83, 'y_max': 8.30, 'color': '#E5E7EB'},
         '3': {'x_min': 0., 'x_max': 3.535, 'y_min': 0., 'y_max': 4.20, 'color': '#E5E7EB'},
         '4': {'x_min': 3.535, 'x_max': 7.105, 'y_min': 0., 'y_max': 2.83, 'color': '#E5E7EB'},
     }
 
-    # Original measurement data mapping
     room_a_data = {'X':[0,1.77,3.54,0,1.77,3.54,0,1.77,3.54], 'Y':[4.20,4.20,4.20,6.27,6.27,6.27,8.33,8.33,8.33], 'RSSI':[-70,-64,-68,-68,-74,-70,-77,-68,-75]}
     room_b_data = {'X':[3.535,5.315,7.105]*4, 'Y':[2.83]*3+[4.65]*3+[6.48]*3+[8.30]*3, 'RSSI':[-50,-66,-81,-85,-71,-75,-50,-70,-70,-70,-69,-71]}
     room_c_data = {'X':[0,1.77,3.54]*3, 'Y':[0]*3+[2.10]*3+[4.20]*3, 'RSSI':[-74,-62,-71,-63,-69,-70,-67,-60,-64]}
     room_d_data = {'X':[3.535,5.315,7.105]*3, 'Y':[0]*3+[1.41]*3+[2.83]*3, 'RSSI':[-73,-67,-74,-63,-66,-70,-64,-66,-75]}
     
-    ROOM_DATA = {'1':room_a_data, '2':room_b_data, '3':room_c_data, '4':room_d_data}
+    ROOM_DATA = {'1':room_a_data,'2':room_b_data,'3':room_c_data,'4':room_d_data}
 
     # Override with dataframe if passed from Streamlit UI
     if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
@@ -991,7 +1009,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
                                    textfont=dict(family=FONT_FAMILY,size=10,color='#6B7280'),
                                    hoverinfo='skip',showlegend=False))
 
-    for room_name, room in ROOM_CONFIGS.items():
+    for room_name, room in ROOMS_CONFIG.items():
         add_room_floor(room_name, room)
 
     # Walls
@@ -1048,58 +1066,57 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         return lx,ly
 
     # Heatmap Generator
-    def add_room_heatmap(room_name, room_data, start_point=1):
+    def add_room_heatmap(room_name, room, room_data):
         if not room_data or len(room_data.get('X', [])) == 0: return
-        room=ROOM_CONFIGS[room_name]
-        xv=np.asarray(room_data['X'],dtype=float)
-        yv=np.asarray(room_data['Y'],dtype=float)
-        rv=np.asarray(room_data['RSSI'],dtype=float)
-
-        gx=np.linspace(room['x_min'],room['x_max'],HEATMAP_RESOLUTION)
-        gy=np.linspace(room['y_min'],room['y_max'],HEATMAP_RESOLUTION)
-        GX,GY=np.meshgrid(gx,gy)
-
+        x_vals = np.asarray(room_data['X'], dtype=float)
+        y_vals = np.asarray(room_data['Y'], dtype=float)
+        rssi_vals = np.asarray(room_data['RSSI'], dtype=float)
+        
+        grid_x = np.linspace(room['x_min'], room['x_max'], HEATMAP_RESOLUTION)
+        grid_y = np.linspace(room['y_min'], room['y_max'], HEATMAP_RESOLUTION)
+        GX, GY = np.meshgrid(grid_x, grid_y)
+        
         try:
-            GZ=griddata((xv,yv),rv,(GX,GY),method='cubic')
-        except Exception:
-            GZ = None
-            
-        nearest=griddata((xv,yv),rv,(GX,GY),method='nearest')
-        if GZ is not None:
-            GZ=np.where(np.isnan(GZ),nearest,GZ)
-        else:
-            GZ = nearest
-
+            GZ = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='cubic')
+        except:
+            GZ = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
+        nearest = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
+        GZ = np.where(np.isnan(GZ), nearest, GZ)
+        
         # ยก Z ขึ้นเป็น 0.20 ให้เห็นชัดเจน
         Z_PLANE = np.full_like(GZ, 0.20)
 
-        fig.add_trace(go.Surface(x=GX,y=GY,z=Z_PLANE,surfacecolor=GZ,
-                                 colorscale=HEATMAP_COLORSCALE,cmin=RSSI_MIN,cmax=RSSI_MAX,
-                                 opacity=HEATMAP_OPACITY,showscale=(room_name=='1'),
-                                 colorbar=dict(title=dict(text='RSSI (dBm)',font=dict(family=FONT_FAMILY,size=13,color='#111827')),
-                                               tickfont=dict(family=FONT_FAMILY,size=11,color='#111827'),x=1.02),
-                                 name=f'Heatmap Room {room_name}',
-                                 hovertemplate='X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{surfacecolor:.1f} dBm<extra></extra>'))
+        fig.add_trace(go.Surface(
+            x=GX, y=GY, z=Z_PLANE,
+            surfacecolor=GZ, colorscale=HEATMAP_COLORSCALE,
+            cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=HEATMAP_OPACITY,
+            showscale=(room_name == '1'), 
+            colorbar=dict(title=dict(text="RSSI (dBm)", font=dict(color="#111827")), tickfont=dict(color="#111827"), x=1.02) if room_name == '1' else None,
+            name=f'Heatmap Room {room_name}',
+            hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{surfacecolor:.1f} dBm<extra></extra>"
+        ))
+        
+        if show_points:
+            fig.add_trace(go.Scatter3d(
+                x=x_vals, y=y_vals, z=np.full(len(x_vals), POINT_HEIGHT),
+                mode='markers', marker=dict(size=4, color='#1F2937', line=dict(width=1, color='white')),
+                name=f'Points Room {room_name}',
+                hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata:.1f} dBm<extra></extra>",
+                customdata=rssi_vals
+            ))
+            labels = [f"P{i+1}" for i in range(len(x_vals))]
+            lx,ly=place_labels(x_vals,y_vals,room)
+            fig.add_trace(go.Scatter3d(
+                x=lx, y=ly, z=np.full(len(lx), TEXT_HEIGHT),
+                mode='text', text=labels, textposition='middle center',
+                textfont=dict(family=FONT_FAMILY, size=POINT_FONT_SIZE, color=POINT_FONT_COLOR),
+                hoverinfo='skip', showlegend=False
+            ))
 
-        point_labels=[f'P{i:02d}' for i in range(start_point,start_point+len(xv))]
-
-        fig.add_trace(go.Scatter3d(x=xv,y=yv,z=np.full(len(xv),POINT_HEIGHT),mode='markers',
-                                   marker=dict(size=4,color='#1F2937',line=dict(width=1,color='white')),
-                                   customdata=np.column_stack((point_labels, rv)),
-                                   hovertemplate='Point: %{customdata[0]}<br>X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata[1]} dBm<extra></extra>',
-                                   name=f'Survey Points Room {room_name}',showlegend=False))
-
-        lx,ly=place_labels(xv,yv,room)
-        fig.add_trace(go.Scatter3d(x=lx,y=ly,z=np.full(len(lx),TEXT_HEIGHT),mode='text',
-                                   text=point_labels,textposition='middle center',
-                                   textfont=dict(family=FONT_FAMILY,size=POINT_FONT_SIZE,color=POINT_FONT_COLOR),
-                                   hoverinfo='skip',name=f'Point Labels Room {room_name}',showlegend=False))
-
-    add_room_heatmap('1', ROOM_DATA.get('1', {}), 1)
-    add_room_heatmap('2', ROOM_DATA.get('2', {}), 1)
-    add_room_heatmap('3', ROOM_DATA.get('3', {}), 1)
-    add_room_heatmap('4', ROOM_DATA.get('4', {}), 1)
-
+    for room_name, room in ROOMS_CONFIG.items():
+        if room_name in ROOM_DATA:
+            add_room_heatmap(room_name, room, ROOM_DATA[room_name])
+            
     # Furniture
     def add_box(x,y,z,w,l,h,color,name):
         x0,x1=x-w/2,x+w/2
@@ -1154,50 +1171,65 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         k=[2,3,6,7,5,4,7,6,7,4,6,5]
         fig.add_trace(go.Mesh3d(x=xs,y=ys,z=zs,i=i,j=j,k=k,color='#38BDF8',opacity=0.45,name=name,hoverinfo='name',showlegend=False))
 
-    T_WIDTH,T_LENGTH,T_HEIGHT=0.73,1.83,0.80
+    if show_furniture:
+        T_WIDTH,T_LENGTH,T_HEIGHT=0.73,1.83,0.80
 
-    # Room 1
-    center_x1,center_y1=(0+3.535)/2,(4.20+8.33)/2
-    add_table('Table 1 (Room 1)',center_x1,center_y1+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    add_table('Table 2 (Room 1)',center_x1,center_y1-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    add_sliding_door('Sliding Door 1',x=DOOR_1_X,y=4.20-(WALL_THICKNESS/2+0.01),length=DOOR_1_W,t=0.04,h=DOOR_1_H,orientation='horizontal')
+        # Room 1
+        center_x1,center_y1=(0+3.535)/2,(4.20+8.33)/2
+        add_table('Table 1 (Room 1)',center_x1,center_y1+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        add_table('Table 2 (Room 1)',center_x1,center_y1-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        add_sliding_door('Sliding Door 1',x=DOOR_1_X,y=4.20-(WALL_THICKNESS/2+0.01),length=DOOR_1_W,t=0.04,h=DOOR_1_H,orientation='horizontal')
 
-    # Room 2
-    center_x2,center_y2=(3.535+7.105)/2,(2.83+8.30)/2
-    GAP=0.50
-    add_table('Table 2 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    add_table('Table 1 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    add_table('Table 3 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    add_table('Table 4 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    DOOR_2_X=3.535+(WALL_THICKNESS/2+0.01)
-    add_sliding_door('Sliding Door (Room 2)',x=DOOR_2_X,y=3.03,length=0.97,t=0.04,h=2.06,orientation='vertical')
+        # Room 2
+        center_x2,center_y2=(3.535+7.105)/2,(2.83+8.30)/2
+        GAP=0.50
+        add_table('Table 2 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        add_table('Table 1 (Room 2)',center_x2,center_y2+GAP/2+T_WIDTH+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        add_table('Table 3 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        add_table('Table 4 (Room 2)',center_x2,center_y2-GAP/2-T_WIDTH-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        DOOR_2_X=3.535+(WALL_THICKNESS/2+0.01)
+        add_sliding_door('Sliding Door (Room 2)',x=DOOR_2_X,y=3.03,length=0.97,t=0.04,h=2.06,orientation='vertical')
 
-    # Room 3
-    center_y3=(0.+4.20)/2
-    table1_x_pos=T_WIDTH/2+WALL_THICKNESS/2
-    add_table('Table 1 (Room 3)',table1_x_pos,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
-    add_table('Table 2 (Room 3)',table1_x_pos+T_WIDTH,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
-    CABINET_W,CABINET_L,CABINET_H=0.49,0.95,1.86
-    cabinet_x_pos=WALL_THICKNESS/2+CABINET_W/2
-    cabinet_y_pos=4.20-WALL_THICKNESS/2-CABINET_L/2
-    add_cabinet('Cabinet (Room 3)',cabinet_x_pos,cabinet_y_pos,0,CABINET_W,CABINET_L,CABINET_H)
-    add_glass_swing_door('Left Swing Door (Room 3)',hinge_x=1.03,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=45)
-    add_glass_swing_door('Right Swing Door (Room 3)',hinge_x=2.97,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=135)
+        # Room 3
+        center_y3=(0.+4.20)/2
+        table1_x_pos=T_WIDTH/2+WALL_THICKNESS/2
+        add_table('Table 1 (Room 3)',table1_x_pos,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
+        add_table('Table 2 (Room 3)',table1_x_pos+T_WIDTH,center_y3,0,T_WIDTH,T_LENGTH,T_HEIGHT)
+        CABINET_W,CABINET_L,CABINET_H=0.49,0.95,1.86
+        cabinet_x_pos=WALL_THICKNESS/2+CABINET_W/2
+        cabinet_y_pos=4.20-WALL_THICKNESS/2-CABINET_L/2
+        add_cabinet('Cabinet (Room 3)',cabinet_x_pos,cabinet_y_pos,0,CABINET_W,CABINET_L,CABINET_H)
+        add_glass_swing_door('Left Swing Door (Room 3)',hinge_x=1.03,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=45)
+        add_glass_swing_door('Right Swing Door (Room 3)',hinge_x=2.97,hinge_y=0.,w=0.97,h=2.06,t=0.02,angle_deg=135)
 
-    # Room 4
-    center_x4,center_y4=(3.535+7.105)/2,(0.+2.83)/2
-    add_table('Table 1 (Room 4)',center_x4,center_y4+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    add_table('Table 2 (Room 4)',center_x4,center_y4-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
-    DOOR_4_X=3.535-(WALL_THICKNESS/2+0.01)
-    add_sliding_door('Sliding Door (Room 4)',x=DOOR_4_X,y=1.86,length=0.97,t=0.04,h=2.06,orientation='vertical')
+        # Room 4
+        center_x4,center_y4=(3.535+7.105)/2,(0.+2.83)/2
+        add_table('Table 1 (Room 4)',center_x4,center_y4+T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        add_table('Table 2 (Room 4)',center_x4,center_y4-T_WIDTH/2,0,T_LENGTH,T_WIDTH,T_HEIGHT)
+        DOOR_4_X=3.535-(WALL_THICKNESS/2+0.01)
+        add_sliding_door('Sliding Door (Room 4)',x=DOOR_4_X,y=1.86,length=0.97,t=0.04,h=2.06,orientation='vertical')
+
+    if show_ap:
+        aps = [(1.77, 6.27, 'AP1'), (5.315, 5.56, 'AP2'), (1.77, 2.10, 'AP3'), (5.315, 1.41, 'AP4')]
+        for ax, ay, aname in aps:
+            fig.add_trace(go.Scatter3d(
+                x=[ax], y=[ay], z=[WALL_HEIGHT - 0.2],
+                mode='markers+text',
+                marker=dict(size=12, color='#FF2020', symbol='diamond', line=dict(color='white', width=2)),
+                text=[aname], textposition='top center', showlegend=False, hoverinfo='skip'
+            ))
+            fig.add_trace(go.Scatter3d(
+                x=[ax, ax], y=[ay, ay], z=[0, WALL_HEIGHT - 0.2],
+                mode='lines', line=dict(color='#FF3030', width=3, dash='dash'), showlegend=False, hoverinfo='skip'
+            ))
 
     fig.update_layout(
-        title=dict(text='3D Wi-Fi RSSI Heatmap',x=0.5,font=dict(size=22,color='#111827',family=FONT_FAMILY)),
+        title=dict(text='3D Wi-Fi RSSI Heatmap | KMITL Co-Working Space (Room A Combined)',x=0.5,font=dict(size=22,color='#111827',family=FONT_FAMILY)),
         paper_bgcolor='#FFFFFF',plot_bgcolor='#FFFFFF',font=dict(family=FONT_FAMILY,color='#111827'),
         scene=dict(bgcolor='#F8FAFC',
-                   xaxis=dict(title='X (m)',range=[-0.5,ROOM_X+0.5],gridcolor='#9CA3AF',zerolinecolor='#4B5563',tickfont=dict(color='#111827')),
-                   yaxis=dict(title='Y (m)',range=[-0.5,ROOM_Y+0.5],gridcolor='#9CA3AF',zerolinecolor='#4B5563',tickfont=dict(color='#111827')),
-                   zaxis=dict(title='Height (m)',range=[0,WALL_HEIGHT+0.5],gridcolor='#9CA3AF',zerolinecolor='#4B5563',tickfont=dict(color='#111827')),
+                   xaxis=dict(title='X (m)',range=[-0.5,ROOM_X+0.5],gridcolor='#CBD5E1',zerolinecolor='#4B5563',tickfont=dict(color='#111827')),
+                   yaxis=dict(title='Y (m)',range=[-0.5,ROOM_Y+0.5],gridcolor='#CBD5E1',zerolinecolor='#4B5563',tickfont=dict(color='#111827')),
+                   zaxis=dict(title='Height (m)',range=[0,WALL_HEIGHT+0.5],gridcolor='#CBD5E1',zerolinecolor='#4B5563',tickfont=dict(color='#111827')),
                    aspectmode='manual',aspectratio=dict(x=7.2,y=8.4,z=3.5),
                    camera=dict(eye=dict(x=1.35,y=1.35,z=0.9))),
         width=1350,height=850,margin=dict(l=0,r=0,t=70,b=0))
