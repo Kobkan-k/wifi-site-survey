@@ -9,7 +9,7 @@ from scipy.interpolate import griddata
 # ============================================================
 # CONSTANTS & GLOBAL COLORBAR SETTINGS (-85 to -55 dBm)
 # ============================================================
-APP_BUILD = "ALL-3D-WHITE-v6-2026-11-09"
+APP_BUILD = "ALL-3D-WHITE-v7-2026-11-10"
 
 RSSI_MIN = -85.0
 RSSI_MAX = -55.0
@@ -478,7 +478,7 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 
 
 # ============================================================
-# GENERAL 3D HEATMAP (สำหรับห้องย่อย Room 1 - Room 4 เกณฑ์เท่ากัน)
+# GENERAL 3D HEATMAP (สำหรับห้องย่อย Room 1 - Room 4 ซ่อน AP)
 # ============================================================
 def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_points, show_furniture):
     heatmap_data = wifi.groupby(["X", "Y"])["RSSI"].max().reset_index()
@@ -524,7 +524,8 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
             hovertemplate="<b>%{customdata[0]}</b><br>RSSI: %{customdata[2]} dBm<br>Channel: %{customdata[3]}<br>Band: %{customdata[4]}<br>SSID: %{customdata[1]}<extra></extra>", name="Survey Points"
         ))
 
-    if show_ap:
+    # ซ่อน AP สำหรับห้องย่อย A1-A4 (Room 1, Room 2, Room 3, Room 4)
+    if show_ap and room_name not in ["Room 1", "Room 2", "Room 3", "Room 4"]:
         AP_X, AP_Y = room_x / 2, room_y / 2
         fig.add_trace(go.Scatter3d(
             x=[AP_X], y=[AP_Y], z=[AP_HEIGHT], mode="markers+text",
