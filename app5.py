@@ -9,7 +9,7 @@ from scipy.interpolate import griddata
 # ============================================================
 # CONSTANTS & GLOBAL COLORBAR SETTINGS (-85 to -55 dBm)
 # ============================================================
-APP_BUILD = "ALL-3D-WHITE-v8-2026-11-11"
+APP_BUILD = "ALL-3D-WHITE-v9-2026-11-11"
 
 RSSI_MIN = -85.0
 RSSI_MAX = -55.0
@@ -245,7 +245,7 @@ def get_room_size(df, room_name):
 
 
 # ============================================================
-# ROOM B 3D HEATMAP (เกณฑ์เท่ากัน: -85 ถึง -55 dBm)
+# ROOM B 3D HEATMAP
 # ============================================================
 def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, show_furniture=True):
     RX, RY, WH = 6.80, 9.00, 3.0
@@ -373,7 +373,7 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
 
 
 # ============================================================
-# ROOM C 3D HEATMAP (เกณฑ์เท่ากัน: -85 ถึง -55 dBm)
+# ROOM C 3D HEATMAP
 # ============================================================
 def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=True):
     ROOM_X, ROOM_Y = 2.70, 9.00
@@ -524,7 +524,6 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
             hovertemplate="<b>%{customdata[0]}</b><br>RSSI: %{customdata[2]} dBm<br>Channel: %{customdata[3]}<br>Band: %{customdata[4]}<br>SSID: %{customdata[1]}<extra></extra>", name="Survey Points"
         ))
 
-    # ซ่อน AP สำหรับห้องย่อย A1-A4 (Room 1, Room 2, Room 3, Room 4)
     if show_ap and room_name not in ["Room 1", "Room 2", "Room 3", "Room 4"]:
         AP_X, AP_Y = room_x / 2, room_y / 2
         fig.add_trace(go.Scatter3d(
@@ -548,7 +547,7 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
 
 
 # ============================================================
-# ROOM A — COMBINED 3D HEATMAP (ภาพรวม Room A เกณฑ์เท่ากัน)
+# ROOM A — COMBINED 3D HEATMAP (แก้ปัญหาพิกัดเพี้ยน)
 # ============================================================
 ROOM_A_LAYOUT = {
     "A1": {"room_key": "Room 1", "x_min": 0.0,   "x_max": 3.535, "y_min": 4.20, "y_max": 8.33},
@@ -565,7 +564,6 @@ ROOM_A_FALLBACK_DATA = {
 }
 
 def _load_room_a_csv(room_key):
-    # ตรวจสอบว่ามีไฟล์อัปโหลดใน Session State สำหรับห้องนี้หรือไม่
     if "uploaded_room_a" in st.session_state and room_key in st.session_state["uploaded_room_a"]:
         uploaded_df = st.session_state["uploaded_room_a"][room_key]
         if uploaded_df is not None and not uploaded_df.empty:
@@ -614,7 +612,7 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     ROOM_FONT_SIZE, ROOM_FONT_COLOR = 16, '#4B5563'
     POINT_HEIGHT, TEXT_HEIGHT = 0.15, 0.28
     
-    HEATMAP_OPACITY, HEATMAP_RESOLUTION = opacity, 80
+    HEATMAP_OPACITY, HEATMAP_RESOLUTION = opacity, 120
 
     ROOMS_CONFIG = {
         '1': {'x_min': 0., 'x_max': 3.535, 'y_min': 4.20, 'y_max': 8.33, 'color': '#E5E7EB'},
@@ -622,19 +620,6 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         '3': {'x_min': 0., 'x_max': 3.535, 'y_min': 0., 'y_max': 4.20, 'color': '#E5E7EB'},
         '4': {'x_min': 3.535, 'x_max': 7.105, 'y_min': 0., 'y_max': 2.83, 'color': '#E5E7EB'},
     }
-
-    ROOM_DATA = {'1': {'X': [], 'Y': [], 'RSSI': []}, '2': {'X': [], 'Y': [], 'RSSI': []}, '3': {'X': [], 'Y': [], 'RSSI': []}, '4': {'X': [], 'Y': [], 'RSSI': []}}
-
-    if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
-        for _, row in wifi.dropna(subset=["X", "Y", "RSSI"]).iterrows():
-            x, y, rssi = float(row['X']), float(row['Y']), float(row['RSSI'])
-            if x <= 3.535 and y >= 4.20: r = '1'
-            elif x > 3.535 and y >= 2.83: r = '2'
-            elif x <= 3.535 and y < 4.20: r = '3'
-            else: r = '4'
-            ROOM_DATA[r]['X'].append(x)
-            ROOM_DATA[r]['Y'].append(y)
-            ROOM_DATA[r]['RSSI'].append(rssi)
 
     fig = go.Figure()
 
@@ -679,77 +664,45 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     DOOR_2_W,DOOR_2_H,DOOR_2_Y=0.97,2.06,3.03
     add_wall(3.535,2.83,3.535,DOOR_2_Y); add_wall(3.535,DOOR_2_Y+DOOR_2_W,3.535,4.20); add_wall(3.535,DOOR_2_Y,3.535,DOOR_2_Y+DOOR_2_W,height=WALL_HEIGHT-DOOR_2_H,z0=DOOR_2_H)
 
-    LABEL_OFFSETS=[(-0.20,-0.18),(0.0,-0.22),(0.20,-0.18),(-0.20,0.18),(0.0,0.22),(0.20,0.18)]
-    used_label_positions=[]
-    def place_labels(x_values,y_values,room):
-        lx,ly=[],[]
-        for idx,(x,y) in enumerate(zip(x_values,y_values)):
-            candidates=LABEL_OFFSETS[idx%6:]+LABEL_OFFSETS[:idx%6]
-            best=None
-            for dx,dy in candidates:
-                px=float(np.clip(x+dx,room['x_min']+0.12,room['x_max']-0.12))
-                py=float(np.clip(y+dy,room['y_min']+0.12,room['y_max']-0.12))
-                separation=min((np.hypot(px-ux,py-uy) for ux,uy in used_label_positions),default=99.)
-                if best is None or separation>best[0]: best=(separation,px,py)
-            _,px,py=best
-            lx.append(px);ly.append(py)
-            used_label_positions.append((px,py))
-        return lx,ly
+    # Global Heatmap Generator
+    if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
+        d = wifi.dropna(subset=["X", "Y", "RSSI"]).copy()
+        if len(d) >= 3:
+            grid_x = np.linspace(0, ROOM_X, HEATMAP_RESOLUTION)
+            grid_y = np.linspace(0, ROOM_Y, HEATMAP_RESOLUTION)
+            GX, GY = np.meshgrid(grid_x, grid_y)
+            try:
+                GZ = griddata((d["X"], d["Y"]), d["RSSI"], (GX, GY), method="cubic")
+            except Exception:
+                GZ = griddata((d["X"], d["Y"]), d["RSSI"], (GX, GY), method="nearest")
+            nearest = griddata((d["X"], d["Y"]), d["RSSI"], (GX, GY), method="nearest")
+            GZ = np.where(np.isnan(GZ), nearest, GZ)
+            GZ = np.clip(GZ, RSSI_MIN, RSSI_MAX)
 
-    # Heatmap Generator
-    def add_room_heatmap(room_name, room, room_data):
-        if not room_data or len(room_data.get('X', [])) == 0: return
-        x_vals = np.asarray(room_data['X'], dtype=float)
-        y_vals = np.asarray(room_data['Y'], dtype=float)
-        rssi_vals = np.asarray(room_data['RSSI'], dtype=float)
-        
-        grid_x = np.linspace(room['x_min'], room['x_max'], HEATMAP_RESOLUTION)
-        grid_y = np.linspace(room['y_min'], room['y_max'], HEATMAP_RESOLUTION)
-        GX, GY = np.meshgrid(grid_x, grid_y)
-        
-        try: GZ = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='cubic')
-        except: GZ = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
-        nearest = griddata((x_vals, y_vals), rssi_vals, (GX, GY), method='nearest')
-        GZ = np.where(np.isnan(GZ), nearest, GZ)
-        GZ = np.clip(GZ, RSSI_MIN, RSSI_MAX)
-        
-        Z_PLANE = np.full_like(GZ, 0.20)
-
-        fig.add_trace(go.Surface(
-            x=GX, y=GY, z=Z_PLANE,
-            surfacecolor=GZ, colorscale=COLORSCALE_NAME,
-            cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=HEATMAP_OPACITY,
-            showscale=(room_name == '1'), 
-            colorbar=dict(
-                title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")), 
-                tickvals=TICK_VALS, 
-                tickfont=dict(color="#111827"), 
-                len=0.75, thickness=20, outlinewidth=0, x=1.02
-            ) if room_name == '1' else None,
-            name=f'Heatmap Room {room_name}',
-            hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{surfacecolor:.1f} dBm<extra></extra>"
-        ))
-        
-        if show_points:
-            fig.add_trace(go.Scatter3d(
-                x=x_vals, y=y_vals, z=np.full(len(x_vals), POINT_HEIGHT),
-                mode='markers', marker=dict(size=4, color='#1F2937', line=dict(width=1, color='white')),
-                name=f'Points Room {room_name}',
-                hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata:.1f} dBm<extra></extra>",
-                customdata=rssi_vals
+            fig.add_trace(go.Surface(
+                x=GX, y=GY, z=np.full_like(GZ, 0.20),
+                surfacecolor=GZ, colorscale=COLORSCALE_NAME,
+                cmin=RSSI_MIN, cmax=RSSI_MAX, opacity=HEATMAP_OPACITY,
+                showscale=True,
+                colorbar=dict(
+                    title=dict(text="<b>RSSI</b><br>(dBm)", font=dict(color="#111827")),
+                    tickvals=TICK_VALS, tickfont=dict(color="#111827"),
+                    len=0.75, thickness=20, outlinewidth=0, x=1.02
+                ),
+                name="Room A Heatmap",
+                hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{surfacecolor:.1f} dBm<extra></extra>"
             ))
-            labels = [f"P{i+1}" for i in range(len(x_vals))]
-            lx,ly=place_labels(x_vals,y_vals,room)
+
+        if show_points and not d.empty:
             fig.add_trace(go.Scatter3d(
-                x=lx, y=ly, z=np.full(len(lx), TEXT_HEIGHT),
-                mode='text', text=labels, textposition='middle center',
+                x=d["X"], y=d["Y"], z=np.full(len(d), POINT_HEIGHT),
+                mode="markers+text", text=d["Point"] if "Point" in d else None, textposition="top center",
                 textfont=dict(family=FONT_FAMILY, size=POINT_FONT_SIZE, color=POINT_FONT_COLOR),
-                hoverinfo='skip', showlegend=False
+                marker=dict(size=4, color="#1F2937", line=dict(width=1, color="white")),
+                name="Survey Points Room A",
+                customdata=np.column_stack((d["Point"], d["RSSI"])),
+                hovertemplate="<b>%{customdata[0]}</b><br>X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata[1]:.1f} dBm<extra></extra>"
             ))
-
-    for room_name, room in ROOMS_CONFIG.items():
-        if room_name in ROOM_DATA:
-            add_room_heatmap(room_name, room, ROOM_DATA[room_name])
             
     # Furniture
     def add_box(x,y,z,w,l,h,color,name):
@@ -829,11 +782,6 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
                    camera=dict(eye=dict(x=1.35,y=1.35,z=0.9))),
         width=1350,height=850,margin=dict(l=0,r=0,t=70,b=0))
 
-    if not show_points:
-        fig.data = tuple(t for t in fig.data if not ((getattr(t, 'name', '') or '').startswith(('Survey Points Room', 'Point Labels Room'))))
-    if not show_furniture:
-        fig.data = tuple(t for t in fig.data if not ((getattr(t, 'name', '') or '').startswith(('Table ', 'Cabinet ', 'Sliding Door', 'Left Swing Door', 'Right Swing Door'))))
-
     return fig
 
 
@@ -888,7 +836,7 @@ def signal_quality(rssi, language="ไทย"):
     if rssi >= -67:
         return ("🟢 Good", "สัญญาณดี เหมาะสำหรับการใช้งานทั่วไปและ Video Call") if language == "ไทย" else ("🟢 Good", "Good signal for general use and video calls.")
     if rssi >= -75:
-        return ("🟡 Fair", "สามารถใช้งานได้ แต่างอาจมีความไม่เสถียรในบางช่วง") if language == "ไทย" else ("🟡 Fair", "Usable signal, but performance may be less stable.")
+        return ("🟡 Fair", "สามารถใช้งานได้ แต่อาจมีความไม่เสถียรในบางช่วง") if language == "ไทย" else ("🟡 Fair", "Usable signal, but performance may be less stable.")
     return ("🔴 Weak", "สัญญาณค่อนข้างอ่อน แนะนำให้ลอง Wi-Fi อื่นหรือขยับเข้าใกล้ Access Point") if language == "ไทย" else ("🔴 Weak", "Weak signal. Try another Wi-Fi or move closer to an access point.")
 
 
