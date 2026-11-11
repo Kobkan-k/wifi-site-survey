@@ -9,7 +9,7 @@ from scipy.interpolate import griddata
 # ============================================================
 # CONSTANTS & GLOBAL COLORBAR SETTINGS (-85 to -55 dBm)
 # ============================================================
-APP_BUILD = "ALL-3D-WHITE-v7-2026-11-10"
+APP_BUILD = "ALL-3D-WHITE-v8-2026-11-11"
 
 RSSI_MIN = -85.0
 RSSI_MAX = -55.0
@@ -565,6 +565,12 @@ ROOM_A_FALLBACK_DATA = {
 }
 
 def _load_room_a_csv(room_key):
+    # ตรวจสอบว่ามีไฟล์อัปโหลดใน Session State สำหรับห้องนี้หรือไม่
+    if "uploaded_room_a" in st.session_state and room_key in st.session_state["uploaded_room_a"]:
+        uploaded_df = st.session_state["uploaded_room_a"][room_key]
+        if uploaded_df is not None and not uploaded_df.empty:
+            return uploaded_df.copy()
+
     filename = ROOMS[room_key]["file"]
     if not filename or not os.path.exists(filename):
         return ROOM_A_FALLBACK_DATA.get(room_key, pd.DataFrame()).copy()
@@ -617,15 +623,9 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
         '4': {'x_min': 3.535, 'x_max': 7.105, 'y_min': 0., 'y_max': 2.83, 'color': '#E5E7EB'},
     }
 
-    room_a_data = {'X':[0,1.77,3.54,0,1.77,3.54,0,1.77,3.54], 'Y':[4.20,4.20,4.20,6.27,6.27,6.27,8.33,8.33,8.33], 'RSSI':[-70,-64,-68,-68,-74,-70,-77,-68,-75]}
-    room_b_data = {'X':[3.535,5.315,7.105]*4, 'Y':[2.83]*3+[4.65]*3+[6.48]*3+[8.30]*3, 'RSSI':[-50,-66,-81,-85,-71,-75,-50,-70,-70,-70,-69,-71]}
-    room_c_data = {'X':[0,1.77,3.54]*3, 'Y':[0]*3+[2.10]*3+[4.20]*3, 'RSSI':[-74,-62,-71,-63,-69,-70,-67,-60,-64]}
-    room_d_data = {'X':[3.535,5.315,7.105]*3, 'Y':[0]*3+[1.41]*3+[2.83]*3, 'RSSI':[-73,-67,-74,-63,-66,-70,-64,-66,-75]}
-    
-    ROOM_DATA = {'1':room_a_data,'2':room_b_data,'3':room_c_data,'4':room_d_data}
+    ROOM_DATA = {'1': {'X': [], 'Y': [], 'RSSI': []}, '2': {'X': [], 'Y': [], 'RSSI': []}, '3': {'X': [], 'Y': [], 'RSSI': []}, '4': {'X': [], 'Y': [], 'RSSI': []}}
 
     if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
-        for k in ROOM_DATA.keys(): ROOM_DATA[k] = {'X': [], 'Y': [], 'RSSI': []}
         for _, row in wifi.dropna(subset=["X", "Y", "RSSI"]).iterrows():
             x, y, rssi = float(row['X']), float(row['Y']), float(row['RSSI'])
             if x <= 3.535 and y >= 4.20: r = '1'
@@ -888,7 +888,7 @@ def signal_quality(rssi, language="ไทย"):
     if rssi >= -67:
         return ("🟢 Good", "สัญญาณดี เหมาะสำหรับการใช้งานทั่วไปและ Video Call") if language == "ไทย" else ("🟢 Good", "Good signal for general use and video calls.")
     if rssi >= -75:
-        return ("🟡 Fair", "สามารถใช้งานได้ แต่อาจมีความไม่เสถียรในบางช่วง") if language == "ไทย" else ("🟡 Fair", "Usable signal, but performance may be less stable.")
+        return ("🟡 Fair", "สามารถใช้งานได้ แต่างอาจมีความไม่เสถียรในบางช่วง") if language == "ไทย" else ("🟡 Fair", "Usable signal, but performance may be less stable.")
     return ("🔴 Weak", "สัญญาณค่อนข้างอ่อน แนะนำให้ลอง Wi-Fi อื่นหรือขยับเข้าใกล้ Access Point") if language == "ไทย" else ("🔴 Weak", "Weak signal. Try another Wi-Fi or move closer to an access point.")
 
 
@@ -931,6 +931,13 @@ ROOM_DISPLAY = {"Room 1": "A1", "Room 2": "A2", "Room 3": "A3", "Room 4": "A4", 
 
 
 # ============================================================
+# INITIALIZE SESSION STATE FOR UPLOADS
+# ============================================================
+if "uploaded_room_a" not in st.session_state:
+    st.session_state["uploaded_room_a"] = {}
+
+
+# ============================================================
 # SIDEBAR
 # ============================================================
 with st.sidebar:
@@ -946,74 +953,69 @@ with st.sidebar:
         room_a_options = ["ภาพรวม Room A", "A1", "A2", "A3", "A4"] if language == "ไทย" else ["Room A Overview", "A1", "A2", "A3", "A4"]
         st.markdown("#### 🚪 ห้องย่อย Room A" if language == "ไทย" else "#### 🚪 Room A Subrooms")
         selected_subroom = st.selectbox("เลือกมุมมอง / ห้องย่อย" if language == "ไทย" else "Select overview / subroom", room_a_options, key="room_a_view")
-        if selected_subroom in ["ภาพรวม Room A", "Room A Overview"]: selected_room = "Room A"
-        else: selected_room = ROOM_A_DISPLAY[selected_subroom]
+        if selected_subroom in ["ภาพรวม Room A", "Room A Overview"]: 
+            selected_room = "Room A"
+        else: 
+            selected_room = ROOM_A_DISPLAY[selected_subroom]
     else:
         selected_room = selected_area
 
     display_room = ROOM_DISPLAY.get(selected_room, selected_room)
     st.divider()
 
-    default_filename = ROOMS[selected_room]["file"]
-    if selected_room == "Room A":
-        st.caption("ข้อมูล Room A: รวมอัปโหลด A1-A4 ในไฟล์เดียวได้" if language == "ไทย" else "Room A data: single file for A1-A4 supported")
+    uploaded_file = None
+    if selected_area == "Room A":
+        if selected_room in ["Room 1", "Room 2", "Room 3", "Room 4"]:
+            st.caption(f"อัปโหลดข้อมูลเฉพาะสำหรับห้อง {display_room}")
+            subroom_file = st.file_uploader(f"{t['upload']} ({display_room})", type=["csv", "xlsx"], key=f"upload_{selected_room}")
+            if subroom_file is not None:
+                st.session_state["uploaded_room_a"][selected_room] = load_data(subroom_file)
+            uploaded_file = st.session_state["uploaded_room_a"].get(selected_room)
+        else:
+            st.caption("ข้อมูลภาพรวม Room A: รวมจากไฟล์ห้องย่อย A1-A4")
     else:
+        default_filename = ROOMS[selected_room]["file"]
         st.caption(f"{t['default_file']}: `{default_filename}`")
-
-    uploaded_file = st.file_uploader(t["upload"], type=["csv", "xlsx"], key=f"upload_{selected_area}")
+        uploaded_file = st.file_uploader(t["upload"], type=["csv", "xlsx"], key=f"upload_{selected_area}")
 
 
 # ============================================================
 # LOAD FILE AND PROCESS FOR ROOM A & OTHERS
 # ============================================================
-if uploaded_file is not None:
-    uploaded_df = load_data(uploaded_file)
-    if selected_area == "Room A":
-        if selected_room == "Room A":
-            df = uploaded_df
-        else:
-            layout = ROOM_A_LAYOUT[display_room]
-            df = uploaded_df[
-                (uploaded_df["X"] >= layout["x_min"]) & (uploaded_df["X"] <= layout["x_max"]) &
-                (uploaded_df["Y"] >= layout["y_min"]) & (uploaded_df["Y"] <= layout["y_max"])
-            ].copy()
-            df["X"] = df["X"] - layout["x_min"]
-            df["Y"] = df["Y"] - layout["y_min"]
-    elif selected_room == "Room B":
-        base_df = load_room_b_embedded()
-        df = pd.concat([base_df, uploaded_df], ignore_index=True).drop_duplicates(subset=["Point", "SSID", "BSSID"], keep="last")
-    else:
-        df = uploaded_df
-
-elif selected_room == "Room A":
+if selected_room == "Room A":
     df = load_room_a_combined_data()
-    if df is None or df.empty:
-        st.error("❌ ไม่สามารถโหลดข้อมูล Room A ได้" if language == "ไทย" else "❌ Unable to load Room A data.")
-        st.stop()
 
 elif selected_room in ["Room 1", "Room 2", "Room 3", "Room 4"]:
     df = _load_room_a_csv(selected_room)
-    if df is None or df.empty:
-        st.error(f"❌ ไม่พบข้อมูล {ROOM_DISPLAY.get(selected_room, selected_room)}")
-        st.stop()
 
-else:
-    default_file = find_default_file(default_filename)
-    if selected_room == "Room B": df = load_room_b_embedded()
-    elif default_file is not None:
-        try:
-            df = pd.read_csv(default_file, skipinitialspace=True)
-            df.columns = df.columns.astype(str).str.strip()
-            df.rename(columns={"Point ID": "Point", "X (m)": "X", "Y (m)": "Y", "RSSI (dBm)": "RSSI"}, inplace=True)
-            for col in ["X", "Y", "RSSI"]:
-                if col in df.columns: df[col] = pd.to_numeric(df[col], errors="coerce")
-            df = df.dropna(subset=["X", "Y", "RSSI"]).copy()
-        except Exception as e:
-            st.error(f"ไม่สามารถอ่าน `{default_filename}` ได้: {e}")
-            st.stop()
+elif selected_room == "Room B":
+    if uploaded_file is not None:
+        base_df = load_room_b_embedded()
+        uploaded_df = load_data(uploaded_file)
+        df = pd.concat([base_df, uploaded_df], ignore_index=True).drop_duplicates(subset=["Point", "SSID", "BSSID"], keep="last")
     else:
-        st.info(f"👆 ยังไม่พบไฟล์ `{default_filename}` อัปโหลดไฟล์เพื่อเริ่มใช้งาน")
-        st.stop()
+        df = load_room_b_embedded()
+
+else: # Room C
+    if uploaded_file is not None:
+        df = load_data(uploaded_file)
+    else:
+        default_filename = ROOMS[selected_room]["file"]
+        default_file = find_default_file(default_filename)
+        if default_file is not None:
+            try:
+                df = pd.read_csv(default_file, skipinitialspace=True)
+                df.columns = df.columns.astype(str).str.strip()
+                df.rename(columns={"Point ID": "Point", "X (m)": "X", "Y (m)": "Y", "RSSI (dBm)": "RSSI"}, inplace=True)
+                for col in ["X", "Y", "RSSI"]:
+                    if col in df.columns: df[col] = pd.to_numeric(df[col], errors="coerce")
+                df = df.dropna(subset=["X", "Y", "RSSI"]).copy()
+            except Exception as e:
+                st.error(f"ไม่สามารถอ่าน `{default_filename}` ได้: {e}")
+                st.stop()
+        else:
+            st.info(f"👆 ยังไม่พบไฟล์ `{default_filename}` อัปโหลดไฟล์เพื่อเริ่มใช้งาน")
+            st.stop()
 
 if df is None or df.empty:
     st.error("❌ ไม่พบข้อมูล Survey")
