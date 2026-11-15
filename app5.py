@@ -265,10 +265,18 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
     fig = go.Figure()
 
     d = wifi.dropna(subset=["X", "Y", "RSSI"]).copy()
+    
+    # ------------------------------------------------------------
+    # FIX: Lock rendering to the first SSID if multiple are selected
+    # ------------------------------------------------------------
+    if "SSID" in d.columns and d["SSID"].nunique() > 1:
+        first_ssid = d["SSID"].unique()[0]
+        d = d[d["SSID"] == first_ssid].copy()
 
     # 1. HEATMAP SURFACE
     if len(d) >= 3:
-        heatmap_data = d.groupby(["X", "Y"])["RSSI"].max().reset_index()
+        # FIX: Change .max() to .min() so heatmap shows weakest signal when coords overlap
+        heatmap_data = d.groupby(["X", "Y"])["RSSI"].min().reset_index()
         grid_x = np.linspace(0, ROOM_X, 180)
         grid_y = np.linspace(0, ROOM_Y, 240)
         GX, GY = np.meshgrid(grid_x, grid_y)
@@ -314,7 +322,8 @@ def create_room_b_heatmap(wifi, opacity=0.80, show_ap=True, show_points=True, sh
 
     # 2. SURVEY POINTS & LABELS
     if show_points and not d.empty:
-        pt_df = d.sort_values("RSSI", ascending=False).drop_duplicates(subset=["X", "Y"])
+        # FIX: Change ascending=False to ascending=True so drop_duplicates keeps the minimum RSSI
+        pt_df = d.sort_values("RSSI", ascending=True).drop_duplicates(subset=["X", "Y"])
         
         fig.add_trace(go.Scatter3d(
             x=pt_df["X"],
@@ -560,6 +569,14 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 
     fig = go.Figure()
 
+    # ------------------------------------------------------------
+    # FIX: Lock rendering to the first SSID if multiple are selected
+    # ------------------------------------------------------------
+    d = wifi.copy() if wifi is not None else pd.DataFrame()
+    if not d.empty and "SSID" in d.columns and d["SSID"].nunique() > 1:
+        first_ssid = d["SSID"].unique()[0]
+        d = d[d["SSID"] == first_ssid].copy()
+
     def add_room_floor(room_name, room):
         x1, x2, y1, y2 = room["x_min"], room["x_max"], room["y_min"], room["y_max"]
         fig.add_trace(go.Mesh3d(x=[x1, x2, x2, x1], y=[y1, y1, y2, y2], z=[0]*4,
@@ -584,8 +601,9 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
     real_data = {"X": [0.00, 1.35, 2.70, 0.00, 1.35, 2.70, 0.00, 1.35, 2.70],
                  "Y": [0.00, 0.00, 0.00, 4.50, 4.50, 4.50, 9.00, 9.00, 9.00],
                  "RSSI": [-82, -85, -84, -77, -67, -58, -77, -84, -75]}
-    if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
-        m = wifi.dropna(subset=["X", "Y", "RSSI"]).groupby(["X", "Y"])["RSSI"].max().reset_index()
+    if not d.empty and {"X", "Y", "RSSI"}.issubset(d.columns):
+        # FIX: Change .max() to .min() for heatmap aggregation
+        m = d.dropna(subset=["X", "Y", "RSSI"]).groupby(["X", "Y"])["RSSI"].min().reset_index()
         real_data = {k: m[k].to_numpy() for k in ("X", "Y", "RSSI")}
 
     x_vals, y_vals, rssi_vals = np.asarray(real_data["X"], dtype=float), np.asarray(real_data["Y"], dtype=float), np.asarray(real_data["RSSI"], dtype=float)
@@ -609,11 +627,14 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
         name="Heatmap", hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{surfacecolor:.1f} dBm<extra></extra>"
     ))
 
-    if show_points:
+    if show_points and not d.empty:
+        # FIX: Sort ascending=True to keep minimum RSSI for markers/tooltip
+        pt_df = d.dropna(subset=["X", "Y", "RSSI"]).sort_values("RSSI", ascending=True).drop_duplicates(subset=["X", "Y"])
         fig.add_trace(go.Scatter3d(
-            x=x_vals, y=y_vals, z=np.full(len(x_vals), 0.15),
+            x=pt_df["X"], y=pt_df["Y"], z=np.full(len(pt_df), 0.15),
             mode="markers", marker=dict(size=6, color="#1F2937", line=dict(width=1, color="#FFFFFF")),
-            hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<extra></extra>", showlegend=False
+            customdata=np.column_stack((pt_df["RSSI"],)),
+            hovertemplate="X: %{x:.2f} m<br>Y: %{y:.2f} m<br>RSSI: %{customdata[0]} dBm<extra></extra>", showlegend=False
         ))
 
     def add_box(x, y, z, w, l, h, color, name, opacity=1.0):
@@ -656,7 +677,16 @@ def create_room_c_heatmap(wifi, opacity=0.80, show_points=True, show_furniture=T
 # GENERAL 3D HEATMAP (สำหรับห้องย่อย Room 1 - Room 4 ซ่อน AP)
 # ============================================================
 def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_points, show_furniture):
-    heatmap_data = wifi.groupby(["X", "Y"])["RSSI"].max().reset_index()
+    # ------------------------------------------------------------
+    # FIX: Lock rendering to the first SSID if multiple are selected
+    # ------------------------------------------------------------
+    d = wifi.copy()
+    if "SSID" in d.columns and d["SSID"].nunique() > 1:
+        first_ssid = d["SSID"].unique()[0]
+        d = d[d["SSID"] == first_ssid].copy()
+        
+    # FIX: Change .max() to .min() for heatmap aggregation
+    heatmap_data = d.groupby(["X", "Y"])["RSSI"].min().reset_index()
     grid_x = np.linspace(0, room_x, 180)
     grid_y = np.linspace(0, room_y, 240)
     GX, GY = np.meshgrid(grid_x, grid_y)
@@ -690,14 +720,15 @@ def create_3d_heatmap(wifi, room_name, room_x, room_y, opacity, show_ap, show_po
     ))
 
     if show_points:
-        pt_df = wifi.sort_values("RSSI", ascending=False).drop_duplicates(subset=["X", "Y"]).copy()
+        # FIX: Sort ascending=True to keep minimum RSSI for markers/tooltip
+        pt_df = d.sort_values("RSSI", ascending=True).drop_duplicates(subset=["X", "Y"]).copy()
         band_data = pt_df["Band"] if "Band" in pt_df.columns else pd.Series(["N/A"] * len(pt_df), index=pt_df.index)
         channel_data = pt_df["Channel"] if "Channel" in pt_df.columns else pd.Series(["N/A"] * len(pt_df), index=pt_df.index)
         custom_data_stack = np.column_stack((pt_df["Point"].astype(str), pt_df["SSID"].astype(str), pt_df["RSSI"], channel_data, band_data.astype(str)))
         fig.add_trace(go.Scatter3d(
             x=pt_df["X"], y=pt_df["Y"], z=np.ones(len(pt_df)) * 0.15, mode="markers+text", text=pt_df["Point"], textposition="top center",
             marker=dict(size=6, color="white", symbol="circle", line=dict(color="black", width=1.5)), customdata=custom_data_stack,
-            hovertemplate="<b>%{customdata[0]}</b><br>Best RSSI: %{customdata[2]} dBm<br>Channel: %{customdata[3]}<br>Band: %{customdata[4]}<br>SSID: %{customdata[1]}<extra></extra>", name="Survey Points"
+            hovertemplate="<b>%{customdata[0]}</b><br>RSSI: %{customdata[2]} dBm<br>Channel: %{customdata[3]}<br>Band: %{customdata[4]}<br>SSID: %{customdata[1]}<extra></extra>", name="Survey Points"
         ))
 
     if show_ap and room_name not in ["Room 1", "Room 2", "Room 3", "Room 4"]:
@@ -847,7 +878,16 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
     # Global Heatmap Generator
     if wifi is not None and not wifi.empty and {"X", "Y", "RSSI"}.issubset(wifi.columns):
         d = wifi.dropna(subset=["X", "Y", "RSSI"]).copy()
-        heatmap_data = d.groupby(["X", "Y"])["RSSI"].max().reset_index()
+        
+        # ------------------------------------------------------------
+        # FIX: Lock rendering to the first SSID if multiple are selected
+        # ------------------------------------------------------------
+        if "SSID" in d.columns and d["SSID"].nunique() > 1:
+            first_ssid = d["SSID"].unique()[0]
+            d = d[d["SSID"] == first_ssid].copy()
+            
+        # FIX: Change .max() to .min() for heatmap aggregation
+        heatmap_data = d.groupby(["X", "Y"])["RSSI"].min().reset_index()
 
         if len(heatmap_data) >= 3:
             grid_x = np.linspace(0, ROOM_X, HEATMAP_RESOLUTION)
@@ -876,7 +916,8 @@ def create_room_a_combined_heatmap(wifi=None, opacity=0.85, show_ap=True, show_p
             ))
 
         if show_points and not d.empty:
-            pt_df = d.sort_values("RSSI", ascending=False).drop_duplicates(subset=["X", "Y"])
+            # FIX: Sort ascending=True to keep minimum RSSI for markers/tooltip
+            pt_df = d.sort_values("RSSI", ascending=True).drop_duplicates(subset=["X", "Y"])
             fig.add_trace(go.Scatter3d(
                 x=pt_df["X"], y=pt_df["Y"], z=np.full(len(pt_df), POINT_HEIGHT),
                 mode="markers+text", text=pt_df["Point"] if "Point" in pt_df else None, textposition="top center",
